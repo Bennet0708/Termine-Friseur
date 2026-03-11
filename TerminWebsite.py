@@ -293,13 +293,13 @@ elif st.session_state.step == 3:
                                 st.session_state["gewaehlte_uhrzeit"] = slot
                                 st.session_state["gewaehltes_datum"] = datum_str
 
-        if "gewaehlte_uhrzeit" in st.session_state:
-            st.success(
-            f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-            )
+                if "gewaehlte_uhrzeit" in st.session_state:
+                    st.success(
+                    f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+                    )
 
-            else:
-                st.warning("An diesem Tag sind keine Termine mehr frei.")
+        else:
+            st.warning("An diesem Tag sind keine Termine mehr frei.")
 
         col1, col2 = st.columns(2)
         with col1:
