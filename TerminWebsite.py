@@ -282,9 +282,11 @@ elif st.session_state.step == 3:
 
                 cols = st.columns(4)
 
-                for i, slot in enumerate(freie):
-                    with cols[i % 4]:
-                        if st.button(slot, key=f"slot_{slot}"):
+                for i in range(0, len(freie), 4):
+                    row = freie[i:i+4]
+
+                    for j, slot in enumerate(row):
+                        with cols[j]:
 
                             st.session_state["gewaehlte_uhrzeit"] = slot
                             st.session_state["gewaehltes_datum"] = datum_str
