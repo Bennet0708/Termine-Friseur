@@ -293,7 +293,7 @@ elif st.session_state.step == 3:
                                 st.session_state["gewaehlte_uhrzeit"] = slot
                                 st.session_state["gewaehltes_datum"] = datum_str
 
-                if "gewaehlte_uhrzeit" in st.session_state:
+                if st.session_state.get("gewaehlte_uhrzeit") and st.session_state.get("gewaehltes_datum"):
                     st.success(
                     f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
                     )
