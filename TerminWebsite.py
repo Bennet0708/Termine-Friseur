@@ -280,9 +280,9 @@ elif st.session_state.step == 3:
 
             if freie:
 
-                cols = st.columns(4)
+                cols = st.columns(2)
 
-                for i in range(0, len(freie), 4):
+                for i in range(0, len(freie), 2):
                     row = freie[i:i+4]
 
                     for j, slot in enumerate(row):
