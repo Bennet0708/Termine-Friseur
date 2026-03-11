@@ -50,7 +50,8 @@ def email_ok(email):
     return re.match(muster, email) is not None
 
 def freie_termine(datum, dauer, belegte_slots):
-    jetzt = datetime.now
+    
+    jetzt = datetime.now()
     
     freie_startzeiten = []
 
@@ -66,7 +67,7 @@ def freie_termine(datum, dauer, belegte_slots):
             if minuten == 60:
                 minuten = 0
                 stunden += 1
-                continue
+            continue
             
         start_minuten = stunden * 60 + minuten
         ende_minuten = start_minuten + dauer
