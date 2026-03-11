@@ -1,0 +1,69 @@
+{
+    "termine": [
+        {
+            "Name": "Bernd",
+            "Telefon": "4236789",
+            "Datum": "12.03.2026",
+            "Uhrzeit": "11:45",
+            "Service": "Haare - Schneiden",
+            "Termindauer": 30
+        },
+        {
+            "Name": "Bennet Klepsch",
+            "Service": "Anderes - Event/Hochzeit",
+            "E-Mail": "klepschbennet1@gmail.com",
+            "Telefon": "01778912734",
+            "Wunsch": "Ich habe eine Hochzeit am 16.02.2027"
+        },
+        {
+            "Name": "Bennet Klepsch",
+            "Telefon": "00",
+            "Datum": "15.03.2026",
+            "Uhrzeit": "17:30",
+            "Service": "Haare - Schneiden",
+            "Termindauer": 30
+        },
+        {
+            "Name": "Bennet Klepsch",
+            "Telefon": "66",
+            "Datum": "15.03.2026",
+            "Uhrzeit": "09:15",
+            "Service": "Haare - Schneiden",
+            "Termindauer": 30
+        },
+        {
+            "Name": "Bennet Klepsch",
+            "Service": "Haare - Beratung",
+            "E-Mail": "klepschbennet1@gmail.com",
+            "Telefon": "01778912734",
+            "Wunsch": "mm"
+        },
+        {
+            "Name": "Tom Klepsch",
+            "Telefon": "0",
+            "Datum": "10.03.2026",
+            "Uhrzeit": "08:45",
+            "Service": "Haare - Schneiden",
+            "Termindauer": 30
+        },
+        {
+            "Name": "Anastija",
+            "Telefon": "8980",
+            "Datum": "11.03.2026",
+            "Uhrzeit": "08:30",
+            "Service": "Bart - Kontur",
+            "Termindauer": 15
+        }
+    ],
+    "belegte_slots": [
+        "10.03.2026 08:45",
+        "10.03.2026 09:00",
+        "15.03.2026 09:15",
+        "15.03.2026 09:30",
+        "15.03.2026 17:30",
+        "15.03.2026 17:45",
+        "12.03.2026 12:00",
+        "12.03.2026 11:45",
+        "11.03.2026 08:30"
+    ]
+}
