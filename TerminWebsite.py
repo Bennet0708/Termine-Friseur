@@ -288,13 +288,15 @@ elif st.session_state.step == 3:
                     for j, slot in enumerate(row):
                         with cols[j]:
 
-                            st.session_state["gewaehlte_uhrzeit"] = slot
-                            st.session_state["gewaehltes_datum"] = datum_str
+                            if st.button(slot, key=f"slot_{slot}"):
 
-                            if "gewaehlte_uhrzeit" in st.session_state:
-                                st.success(
-                                f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-                                )
+                                st.session_state["gewaehlte_uhrzeit"] = slot
+                                st.session_state["gewaehltes_datum"] = datum_str
+
+        if "gewaehlte_uhrzeit" in st.session_state:
+            st.success(
+            f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+            )
 
             else:
                 st.warning("An diesem Tag sind keine Termine mehr frei.")
