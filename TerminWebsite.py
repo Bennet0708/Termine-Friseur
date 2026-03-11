@@ -283,7 +283,7 @@ elif st.session_state.step == 3:
                 cols = st.columns(2)
 
                 for i in range(0, len(freie), 2):
-                    row = freie[i:i+4]
+                    row = freie[i:i+2]
 
                     for j, slot in enumerate(row):
                         with cols[j]:
