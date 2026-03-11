@@ -50,12 +50,24 @@ def email_ok(email):
     return re.match(muster, email) is not None
 
 def freie_termine(datum, dauer, belegte_slots):
+    jetzt = datetime.now
+    
     freie_startzeiten = []
 
     stunden = 8
     minuten = 30
     while True:
         startzeit = f"{stunden:02d}:{minuten:02d}"
+        
+        slot_dt = datetime.strptime(datum + " " + startzeit, "%d.%m.%Y %H:%M")
+
+        if slot_dt < jetzt + timedelta(minutes=30):
+            minuten += 15
+            if minuten == 60:
+                minuten = 0
+                stunden += 1
+                continue
+            
         start_minuten = stunden * 60 + minuten
         ende_minuten = start_minuten + dauer
 
