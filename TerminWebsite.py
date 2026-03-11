@@ -65,7 +65,7 @@ def freie_termine(datum, dauer, belegte_slots):
         slot_dt = datetime.strptime(datum + " " + startzeit, "%d.%m.%Y %H:%M")
 
         if datum == heute_str:
-            if slot_dt < jetzt + timedelta(minutes=30):
+            if slot_dt < jetzt + timedelta(minutes=60):
                 minuten += 15
                 if minuten == 60:
                     minuten = 0
@@ -269,7 +269,7 @@ elif st.session_state.step == 3:
 
         telefon = st.text_input("Telefonnummer")
 
-        datum = st.date_input("Datum auswählen")
+        datum = st.date_input("Datum auswählen", min_value=date.today())
 
         if datum:
             datum_str = datum.strftime("%d.%m.%Y")
