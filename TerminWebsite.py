@@ -106,14 +106,15 @@ def freie_morgen(dauer, belegte_slots):
 
 
 dauer_min = {
-    "Haare - Schneiden": 30,
-    "Haare - Färben": 60,
-    "Haare - Stylen": 30,
-    "Haare - Beratung": 45,
+    "Haare - Schneiden ab XX €": 30,
+    "Haare - Färben ab XX €": 60,
+    "Haare - Stylen ab XX €": 30,
+    "Haare & Bart ab XX €": 45,
+    "Haare - Beratung ab XX €": 45,
     "Haare - Extrawunsch": 45,
-    "Bart - Trimmen": 15,
-    "Bart - Kontur": 15,
-    "Bart - Beratung": 30,
+    "Bart - Trimmen ab XX €": 15,
+    "Bart - Kontur ab XX €": 15,
+    "Bart - Beratung ab XX €": 30,
     "Bart - Extrawunsch": 15,
 }
 
