@@ -131,7 +131,6 @@ st.set_page_config(
 )
 st.title("📅 Online Termin buchen")
 st.caption("Schnell & unkompliziert Termin auswählen")
-st.write("Buche deinen Termin in wenigen Sekunden.")
 st.markdown("---")
 st.info("Öffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
 
