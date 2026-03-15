@@ -285,8 +285,6 @@ elif st.session_state.step == 3:
 
             freie = freie_termine(datum_str, dauer, belegte_slots)
 
-            st.subheader("Freie Uhrzeiten")
-
             if freie:
                 st.subheader("Freie Uhrzeiten")
                 st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
