@@ -119,7 +119,7 @@ dauer_min = {
 }
 
 kategorien = {
-    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", " Haare & Bart ab XX €", "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
+    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", "Haare & Bart ab XX €", "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
     "Bart": ["Bart - Trimmen ab XX €", "Bart - Kontur ab XX €", "Bart - Beratung ab XX €", "Bart - Extrawunsch"],
     "Anderes": ["Anderes - Event/Hochzeit", "Anderes - Beratung", "Anderes - Extrawunsch"],
 }
@@ -130,6 +130,7 @@ st.set_page_config(
     layout="wide"
 )
 st.title("📅 Online Termin buchen")
+st.caption("Schnell & unkompliziert Termin auswählen")
 st.write("Buche deinen Termin in wenigen Sekunden.")
 st.markdown("---")
 st.info("Öffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
@@ -196,6 +197,8 @@ elif st.session_state.step == 2:
         srv_index = 0
         
     service = st.selectbox("Service", services, index=srv_index)
+
+    st.caption(f"Dauer: {dauer_min[service]} Minuten")
    
     col1, col2 = st.columns(2)
     with col1:
