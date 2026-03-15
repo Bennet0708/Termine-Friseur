@@ -119,7 +119,7 @@ dauer_min = {
 }
 
 kategorien = {
-    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", " Haare & Bart ab XX €" "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
+    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", " Haare & Bart ab XX €", "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
     "Bart": ["Bart - Trimmen ab XX €", "Bart - Kontur ab XX €", "Bart - Beratung ab XX €", "Bart - Extrawunsch"],
     "Anderes": ["Anderes - Event/Hochzeit", "Anderes - Beratung", "Anderes - Extrawunsch"],
 }
