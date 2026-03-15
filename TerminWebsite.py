@@ -118,14 +118,19 @@ dauer_min = {
 }
 
 kategorien = {
-    "Haare": ["Haare - Schneiden", "Haare - Färben", "Haare - Stylen", "Haare - Beratung", "Haare - Extrawunsch"],
-    "Bart": ["Bart - Trimmen", "Bart - Kontur", "Bart - Beratung", "Bart - Extrawunsch"],
+    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", " Haare & Bart ab XX €" "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
+    "Bart": ["Bart - Trimmen ab XX €", "Bart - Kontur ab XX €", "Bart - Beratung ab XX €", "Bart - Extrawunsch"],
     "Anderes": ["Anderes - Event/Hochzeit", "Anderes - Beratung", "Anderes - Extrawunsch"],
 }
 
-st.set_page_config(page_title="Terminbot", page_icon="📅")
-st.title("📅 Termin buchen")
-st.write("Ich bin für Sie da um ein Termin zu buchen. Folgen Sie einfach den Anweisungen.")
+st.set_page_config(
+    page_title="Termin buchen",
+    page_icon="💈",
+    layout="wide"
+)
+st.title("📅 Online Termin buchen")
+st.write("Buche deinen Termin in wenigen Sekunden.")
+st.markdown("---")
 st.info("Öffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
 
 termine, belegte_slots = laden()
@@ -279,27 +284,20 @@ elif st.session_state.step == 3:
             st.subheader("Freie Uhrzeiten")
 
             if freie:
+                for slot in freie:
+                    st.subheader("Freie Uhrzeiten")
+                    st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
+                    if st.button(slot, key=f"slot_{slot}", use_container_width=True):
+                        st.session_state["gewaehlte_uhrzeit"] = slot
+                        st.session_state["gewaehltes_datum"] = datum_str
 
-                cols = st.columns(2)
+                        if st.session_state.get("gewaehlte_uhrzeit") and st.session_state.get("gewaehltes_datum"):
+                            st.success(
+                            f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+                            )
 
-                for i in range(0, len(freie), 2):
-                    row = freie[i:i+2]
-
-                    for j, slot in enumerate(row):
-                        with cols[j]:
-
-                            if st.button(slot, key=f"slot_{slot}"):
-
-                                st.session_state["gewaehlte_uhrzeit"] = slot
-                                st.session_state["gewaehltes_datum"] = datum_str
-
-                if st.session_state.get("gewaehlte_uhrzeit") and st.session_state.get("gewaehltes_datum"):
-                    st.success(
-                    f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-                    )
-
-        else:
-            st.warning("An diesem Tag sind keine Termine mehr frei.")
+            else:
+                st.warning("An diesem Tag sind keine Termine mehr frei.")
 
         col1, col2 = st.columns(2)
         with col1:
