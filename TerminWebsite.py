@@ -285,9 +285,9 @@ elif st.session_state.step == 3:
             st.subheader("Freie Uhrzeiten")
 
             if freie:
+                st.subheader("Freie Uhrzeiten")
+                st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
                 for slot in freie:
-                    st.subheader("Freie Uhrzeiten")
-                    st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
                     if st.button(slot, key=f"slot_{slot}", use_container_width=True):
                         st.session_state["gewaehlte_uhrzeit"] = slot
                         st.session_state["gewaehltes_datum"] = datum_str
