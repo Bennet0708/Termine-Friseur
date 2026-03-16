@@ -116,9 +116,6 @@ dauer_min = {
     "Bart - Kontur ab XX €": 15,
     "Bart - Beratung ab XX €": 30,
     "Bart - Extrawunsch": 15,
-    "Anderes - Event/Hochzeit": Nach Absprache,
-    "Anderes - Beratung": 30,
-    "Anderes - Extrawunsch": 
 }
 
 kategorien = {
