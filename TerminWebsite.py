@@ -116,6 +116,9 @@ dauer_min = {
     "Bart - Kontur ab XX €": 15,
     "Bart - Beratung ab XX €": 30,
     "Bart - Extrawunsch": 15,
+    "Anderes - Event/Hochzeit": Nach Absprache,
+    "Anderes - Beratung": 30,
+    "Anderes - Extrawunsch": 
 }
 
 kategorien = {
@@ -197,7 +200,8 @@ elif st.session_state.step == 2:
         
     service = st.selectbox("Service", services, index=srv_index)
 
-    st.caption(f"Dauer: {dauer_min[service]} Minuten")
+    if service in dauer_min:
+        st.caption(f"Dauer: {dauer_min[service]} Minuten")
    
     col1, col2 = st.columns(2)
     with col1:
@@ -273,7 +277,8 @@ elif st.session_state.step == 3:
                     st.rerun()
 
     else:
-        dauer = dauer_min[service]
+        if service in dauer_min:
+            dauer = dauer_min[service]
 
         telefon = st.text_input("Telefonnummer")
 
