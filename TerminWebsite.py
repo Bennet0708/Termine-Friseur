@@ -460,7 +460,7 @@ elif st.session_state.step == 99:
     passwort = st.text_input("Passwort eingeben", type="password")
 
     if st.button("Anmelden"):
-        if passwort == "admin123":
+        if passwort == st.secrets["ADMIN_PASSWORT"]:
             st.session_state.is_admin = True
             st.session_state.step = 5
             st.rerun()
