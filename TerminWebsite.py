@@ -3,7 +3,8 @@ import json
 from datetime import date, datetime, timedelta
 import pandas as pd
 import re
-
+import smtplib
+from email.mime.text import MIMEText
 DATEI = "termine.json"
 
 def laden():
@@ -23,6 +24,42 @@ def speichern(termine, belegte_slots):
             "belegte_slots": list(belegte_slots)
         }
         json.dump(data, f, indent=4)
+
+
+def benachrichtigung_senden(termin):
+    if termin.get("modus") == "standard":
+        inhalt = f"""
+Neuer Termin gebucht!
+
+Name: {termin['Name']}
+Telefon: {termin['Telefon']}
+Service: {termin['Service']}
+Datum: {termin['Datum']}
+Uhrzeit: {termin['Uhrzeit']}
+Dauer: {termin['Termindauer']} Minuten
+        """
+    else:
+        inhalt = f"""
+Neue manuelle Anfrage!
+
+Name: {termin['Name']}
+Telefon: {termin['Telefon']}
+Service: {termin['Service']}
+Wunsch: {termin['Wunsch']}
+E-Mail: {termin['Email']}
+        """
+
+    msg = MIMEText(inhalt, "plain", "utf-8")
+    msg["Subject"] = "📅 Neuer Termin – Terminbot"
+    msg["From"] = st.secrets["EMAIL_ABSENDER"]
+    msg["To"] = st.secrets["EMAIL_EMPFAENGER"]
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(
+            st.secrets["EMAIL_ABSENDER"],
+            st.secrets["EMAIL_PASSWORT"]
+        )
+        server.send_message(msg)
 
 def slots_fuer_termin(datum, start_uhrzeit, dauer):
     teile = start_uhrzeit.split(":")
@@ -262,6 +299,8 @@ elif st.session_state.step == 3:
                     termine.append(anfrage)
                     speichern(termine, belegte_slots)
 
+                    benachrichtigung_senden(st.session_state.letzte_buchung)
+
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
                         "Name": st.session_state.name,
@@ -350,6 +389,8 @@ elif st.session_state.step == 3:
                     belegte_slots.add(s)
 
                 speichern(termine, belegte_slots)
+
+                benachrichtigung_senden(st.session_state.letzte_buchung)
 
                 st.session_state.letzte_buchung = {
                     "modus" : "standard",
