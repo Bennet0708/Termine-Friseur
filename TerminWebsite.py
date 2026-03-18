@@ -299,8 +299,6 @@ elif st.session_state.step == 3:
                     termine.append(anfrage)
                     speichern(termine, belegte_slots)
 
-                    benachrichtigung_senden(st.session_state.letzte_buchung)
-
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
                         "Name": st.session_state.name,
@@ -309,6 +307,9 @@ elif st.session_state.step == 3:
                         "Email": email.strip(),
                         "Wunsch": wunsch.strip()
                         }
+
+                    benachrichtigung_senden(st.session_state.letzte_buchung)
+                    
                     st.session_state.step = 4
                     st.rerun()
 
@@ -390,8 +391,6 @@ elif st.session_state.step == 3:
 
                 speichern(termine, belegte_slots)
 
-                benachrichtigung_senden(st.session_state.letzte_buchung)
-
                 st.session_state.letzte_buchung = {
                     "modus" : "standard",
                     "Name": st.session_state.name,
@@ -401,6 +400,8 @@ elif st.session_state.step == 3:
                     "Uhrzeit": uhrzeit,
                     "Termindauer": dauer
                     }
+
+                benachrichtigung_senden(st.session_state.letzte_buchung)
 
                 st.session_state.step = 4
                 st.rerun()
