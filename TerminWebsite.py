@@ -449,7 +449,8 @@ elif st.session_state.step == 3:
                     "Service": service,
                     "Datum": datum,
                     "Uhrzeit": uhrzeit,
-                    "Termindauer": dauer
+                    "Termindauer": dauer,
+                    "Email" : email.strip()
                     }
 
                 benachrichtigung_senden(st.session_state.letzte_buchung)
@@ -470,6 +471,7 @@ elif st.session_state.step == 4:
         st.write("**Datum:**", b.get("Datum", "-"))
         st.write("**Uhrzeit:**", b.get("Uhrzeit", "-"))
         st.write("**Dauer:**", f"{b.get('Termindauer', '-') } Minuten")
+        st.write("**E-Mail:**", b.get("Email", "-"))
 
     elif b["modus"] == "manual":
         st.write("**Name:**", b.get("Name", "-"))
@@ -478,8 +480,8 @@ elif st.session_state.step == 4:
         st.write("**Wunsch:**", b.get("Wunsch", "-"))
         st.write("**E-Mail:**", b.get("Email", "-"))
 
-    st.info("Bitte Screenshot machen oder Termin notieren.")
-
+    st.info("Sie sollten eine Bestätigungs-Email bekommen haben")
+    
     if st.button("Noch einen Termin buchen"):
         st.session_state.step = 1
         st.session_state.gebucht = False
