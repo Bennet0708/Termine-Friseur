@@ -1,31 +1,54 @@
 import streamlit as st
-import json
+from supabase import create_client
 from datetime import date, datetime, timedelta
 import pandas as pd
 import re
 import smtplib
 from email.mime.text import MIMEText
-DATEI = "termine.json"
+
+supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_KEY"]
+)
 
 def laden():
     try:
-        with open(DATEI, "r") as f:
-            data = json.load(f)
-            termine = data.get("termine", [])
-            belegte_slots = set(data.get("belegte_slots", []))
-            return termine, belegte_slots
+        termine_result = supabase.table("termine").select("*").execute()
+        anfragen_result = supabase.table("anfragen").select("*").execute()
+        
+        termine = termine_result.data
+        anfragen = anfragen_result.data
+        
+        belegte_slots = set()
+        for t in termine:
+            if t.get("datum") and t.get("uhrzeit") and t.get("termindauer"):
+                slots = slots_fuer_termin(t["datum"], t["uhrzeit"], t["termindauer"])
+                for s in slots:
+                    belegte_slots.add(s)
+        
+        return termine + anfragen, belegte_slots
     except:
         return [], set()
-
-def speichern(termine, belegte_slots):
-    with open(DATEI, "w") as f:
-        data = {
-            "termine": termine,
-            "belegte_slots": list(belegte_slots)
-        }
-        json.dump(data, f, indent=4)
-
-
+    
+def speichern(termin_dict, ist_anfrage=False):
+    if ist_anfrage:
+        supabase.table("anfragen").insert({
+            "name": termin_dict.get("Name"),
+            "telefon": termin_dict.get("Telefon"),
+            "service": termin_dict.get("Service"),
+            "email": termin_dict.get("Email"),
+            "wunsch": termin_dict.get("Wunsch")
+        }).execute()
+    else:
+        supabase.table("termine").insert({
+            "name": termin_dict.get("Name"),
+            "telefon": termin_dict.get("Telefon"),
+            "datum": termin_dict.get("Datum"),
+            "uhrzeit": termin_dict.get("Uhrzeit"),
+            "service": termin_dict.get("Service"),
+            "termindauer": termin_dict.get("Termindauer")
+        }).execute()
+        
 def benachrichtigung_senden(termin):
     if termin.get("modus") == "standard":
         inhalt = f"""
@@ -335,8 +358,6 @@ elif st.session_state.step == 3:
                         "Wunsch": wunsch.strip()
                     }
                     termine.append(anfrage)
-                    speichern(termine, belegte_slots)
-
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
                         "Name": st.session_state.name,
@@ -345,7 +366,8 @@ elif st.session_state.step == 3:
                         "Email": email.strip(),
                         "Wunsch": wunsch.strip()
                         }
-
+                    
+                    speichern(st.session_state.letzte_buchung, ist_anfrage=True)
                     benachrichtigung_senden(st.session_state.letzte_buchung)
                     bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
                     
@@ -440,8 +462,6 @@ elif st.session_state.step == 3:
                 for s in slots_liste:
                     belegte_slots.add(s)
 
-                speichern(termine, belegte_slots)
-
                 st.session_state.letzte_buchung = {
                     "modus" : "standard",
                     "Name": st.session_state.name,
@@ -452,7 +472,8 @@ elif st.session_state.step == 3:
                     "Termindauer": dauer,
                     "Email" : email.strip()
                     }
-
+                
+                speichern(st.session_state.letzte_buchung, ist_anfrage=False)
                 benachrichtigung_senden(st.session_state.letzte_buchung)
                 bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
 
@@ -480,7 +501,7 @@ elif st.session_state.step == 4:
         st.write("**Wunsch:**", b.get("Wunsch", "-"))
         st.write("**E-Mail:**", b.get("Email", "-"))
 
-    st.info("Sie sollten eine Bestätigungs-Email bekommen haben")
+    st.info("Sie sollten eine Bestätigungs-Email bekommen haben.")
     
     if st.button("Noch einen Termin buchen"):
         st.session_state.step = 1
@@ -533,19 +554,18 @@ elif st.session_state.step == 5:
         st.subheader("📩 Manuelle Anfragen")
         st.dataframe(pd.DataFrame(manual), use_container_width=True)
 
-    optionen = [f"{i+1} - {t.get('Name','-')} - {t.get('Service','-')}" for i, t in enumerate(termine)]
+    optionen = [f"{i+1} - {t.get('name','-')} - {t.get('service','-')}" for i, t in enumerate(termine)]
     auswahl = st.selectbox("Eintrag auswählen zum Löschen", optionen)
 
     if st.button("🗑️ Löschen"):
         index = optionen.index(auswahl)
-        t = termine.pop(index)
-
-        if "Datum" in t:
-            slots = slots_fuer_termin(t["Datum"], t["Uhrzeit"], t["Termindauer"])
-            for s in slots:
-                belegte_slots.discard(s)
-
-        speichern(termine, belegte_slots)
+        t = termine[index]
+    
+        if "datum" in t:
+            supabase.table("termine").delete().eq("id", t["id"]).execute()
+        else:
+            supabase.table("anfragen").delete().eq("id", t["id"]).execute()
+    
         st.success("Eintrag gelöscht")
         st.rerun()
 
