@@ -350,14 +350,6 @@ elif st.session_state.step == 3:
                 elif not telefon.strip():
                     st.error("Bitte Telefonnummer angeben.")
                 else:
-                    anfrage = {
-                        "Name": st.session_state.name,
-                        "Service": service,
-                        "E-Mail": email.strip(),
-                        "Telefon": telefon.strip(),
-                        "Wunsch": wunsch.strip()
-                    }
-                    termine.append(anfrage)
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
                         "Name": st.session_state.name,
@@ -448,20 +440,6 @@ elif st.session_state.step == 3:
                     st.session_state.gebucht = False
                     st.stop()
 
-                termin = {
-                    "Name": st.session_state.name,
-                    "Telefon": telefon.strip(),
-                    "Datum": datum,
-                    "Uhrzeit": uhrzeit,
-                    "Service": service,
-                     "Termindauer": dauer
-                } 
-
-                termine.append(termin)
-
-                for s in slots_liste:
-                    belegte_slots.add(s)
-
                 st.session_state.letzte_buchung = {
                     "modus" : "standard",
                     "Name": st.session_state.name,
@@ -532,9 +510,9 @@ elif st.session_state.step == 5:
         manual = []
 
         for t in termine:
-            if "Datum" in t and "Uhrzeit" in t:
+            if "datum" in t and "uhrzeit" in t:
                 dt = datetime.strptime(
-                    t["Datum"] + " " + t["Uhrzeit"],
+                    t["datum"] + " " + t["uhrzeit"],
                     "%d.%m.%Y %H:%M"
                 )
                 t_copy = t.copy()
