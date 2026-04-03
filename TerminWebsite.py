@@ -61,6 +61,44 @@ E-Mail: {termin['Email']}
         )
         server.send_message(msg)
 
+def bestaetigung_senden(termin, email_kunde):
+    if termin.get("modus") == "standard":
+        inhalt = f"""
+Hallo {termin['Name']}!
+
+Dein Termin wurde erfolgreich gebucht.
+
+Service: {termin['Service']}
+Datum: {termin['Datum']}
+Uhrzeit: {termin['Uhrzeit']}
+Dauer: {termin['Termindauer']} Minuten
+
+Bei Fragen melde dich direkt beim Salon.
+        """
+    else:
+        inhalt = f"""
+Hallo {termin['Name']}!
+
+Deine Anfrage wurde erfolgreich übermittelt.
+
+Service: {termin['Service']}
+Dein Wunsch: {termin['Wunsch']}
+
+Wir melden uns bald bei dir.
+        """
+
+    msg = MIMEText(inhalt, "plain", "utf-8")
+    msg["Subject"] = "✅ Deine Buchungsbestätigung"
+    msg["From"] = st.secrets["EMAIL_ABSENDER"]
+    msg["To"] = email_kunde
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(
+            st.secrets["EMAIL_ABSENDER"],
+            st.secrets["EMAIL_PASSWORT"]
+        )
+        server.send_message(msg)
+
 def slots_fuer_termin(datum, start_uhrzeit, dauer):
     teile = start_uhrzeit.split(":")
     stunden = int(teile[0])
@@ -309,6 +347,7 @@ elif st.session_state.step == 3:
                         }
 
                     benachrichtigung_senden(st.session_state.letzte_buchung)
+                    bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
                     
                     st.session_state.step = 4
                     st.rerun()
@@ -318,6 +357,8 @@ elif st.session_state.step == 3:
             dauer = dauer_min[service]
 
         telefon = st.text_input("Telefonnummer")
+
+        email = st.text_input("E-Mail (für Bestätigung)")
 
         datum = st.date_input("Datum auswählen", min_value=date.today())
 
@@ -363,6 +404,16 @@ elif st.session_state.step == 3:
                     st.session_state.gebucht = False
                     st.stop()
 
+                if not email_ok(email):
+                    st.error("Bitte korrekte E-Mail eingeben.")
+                    st.session_state.gebucht = False
+                    st.stop()
+
+                if not st.session_state.gewaehlte_uhrzeit:
+                    st.error("Bitte erst eine Uhrzeit auswählen.")
+                    st.session_state.gebucht = False
+                    st.stop()
+
                 slots_liste = slots_fuer_termin(datum, uhrzeit, dauer)
 
 
@@ -402,6 +453,7 @@ elif st.session_state.step == 3:
                     }
 
                 benachrichtigung_senden(st.session_state.letzte_buchung)
+                bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
 
                 st.session_state.step = 4
                 st.rerun()
