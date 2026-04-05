@@ -1,54 +1,65 @@
+﻿import re
+import smtplib
+from datetime import date, datetime, timedelta
+from email.mime.text import MIMEText
+
+import pandas as pd
 import streamlit as st
 from supabase import create_client
-from datetime import date, datetime, timedelta
-import pandas as pd
-import re
-import smtplib
-from email.mime.text import MIMEText
 
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
-    st.secrets["SUPABASE_KEY"]
+    st.secrets["SUPABASE_KEY"],
 )
+
 
 def laden():
     try:
         termine_result = supabase.table("termine").select("*").execute()
         anfragen_result = supabase.table("anfragen").select("*").execute()
-        
-        termine = termine_result.data
-        anfragen = anfragen_result.data
-        
+
+        termine = termine_result.data or []
+        anfragen = anfragen_result.data or []
+
         belegte_slots = set()
-        for t in termine:
-            if t.get("datum") and t.get("uhrzeit") and t.get("termindauer"):
-                slots = slots_fuer_termin(t["datum"], t["uhrzeit"], t["termindauer"])
-                for s in slots:
-                    belegte_slots.add(s)
-        
+        for termin in termine:
+            datum = termin.get("datum")
+            uhrzeit = termin.get("uhrzeit")
+            dauer = termin.get("termindauer")
+            if datum and uhrzeit and dauer:
+                for slot in slots_fuer_termin(datum, uhrzeit, dauer):
+                    belegte_slots.add(slot)
+
         return termine + anfragen, belegte_slots
-    except:
+    except Exception as exc:
+        st.error(f"Supabase-Fehler beim Laden: {exc}")
         return [], set()
-    
+
+
 def speichern(termin_dict, ist_anfrage=False):
     if ist_anfrage:
-        supabase.table("anfragen").insert({
-            "name": termin_dict.get("Name"),
-            "telefon": termin_dict.get("Telefon"),
-            "service": termin_dict.get("Service"),
-            "email": termin_dict.get("Email"),
-            "wunsch": termin_dict.get("Wunsch")
-        }).execute()
-    else:
-        supabase.table("termine").insert({
+        return supabase.table("anfragen").insert(
+            {
+                "name": termin_dict.get("Name"),
+                "telefon": termin_dict.get("Telefon"),
+                "service": termin_dict.get("Service"),
+                "email": termin_dict.get("Email"),
+                "wunsch": termin_dict.get("Wunsch"),
+            }
+        ).execute()
+
+    return supabase.table("termine").insert(
+        {
             "name": termin_dict.get("Name"),
             "telefon": termin_dict.get("Telefon"),
             "datum": termin_dict.get("Datum"),
             "uhrzeit": termin_dict.get("Uhrzeit"),
             "service": termin_dict.get("Service"),
-            "termindauer": termin_dict.get("Termindauer")
-        }).execute()
-        
+            "termindauer": termin_dict.get("Termindauer"),
+        }
+    ).execute()
+
+
 def benachrichtigung_senden(termin):
     if termin.get("modus") == "standard":
         inhalt = f"""
@@ -73,16 +84,17 @@ E-Mail: {termin['Email']}
         """
 
     msg = MIMEText(inhalt, "plain", "utf-8")
-    msg["Subject"] = "📅 Neuer Termin – Terminbot"
+    msg["Subject"] = "Neuer Termin - Terminbot"
     msg["From"] = st.secrets["EMAIL_ABSENDER"]
     msg["To"] = st.secrets["EMAIL_EMPFAENGER"]
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(
             st.secrets["EMAIL_ABSENDER"],
-            st.secrets["EMAIL_PASSWORT"]
+            st.secrets["EMAIL_PASSWORT"],
         )
         server.send_message(msg)
+
 
 def bestaetigung_senden(termin, email_kunde):
     if termin.get("modus") == "standard":
@@ -102,7 +114,7 @@ Bei Fragen melde dich direkt beim Salon.
         inhalt = f"""
 Hallo {termin['Name']}!
 
-Deine Anfrage wurde erfolgreich übermittelt.
+Deine Anfrage wurde erfolgreich uebermittelt.
 
 Service: {termin['Service']}
 Dein Wunsch: {termin['Wunsch']}
@@ -111,16 +123,17 @@ Wir melden uns bald bei dir.
         """
 
     msg = MIMEText(inhalt, "plain", "utf-8")
-    msg["Subject"] = "✅ Deine Buchungsbestätigung"
+    msg["Subject"] = "Deine Buchungsbestaetigung"
     msg["From"] = st.secrets["EMAIL_ABSENDER"]
     msg["To"] = email_kunde
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(
             st.secrets["EMAIL_ABSENDER"],
-            st.secrets["EMAIL_PASSWORT"]
+            st.secrets["EMAIL_PASSWORT"],
         )
         server.send_message(msg)
+
 
 def slots_fuer_termin(datum, start_uhrzeit, dauer):
     teile = start_uhrzeit.split(":")
@@ -143,116 +156,134 @@ def slots_fuer_termin(datum, start_uhrzeit, dauer):
 
     return slots_liste
 
+
 def email_ok(email):
     muster = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
     return re.match(muster, email) is not None
 
-def freie_termine(datum, dauer, belegte_slots):
 
+def freie_termine(datum, dauer, belegte_slots):
     jetzt = datetime.now()
     heute_str = jetzt.strftime("%d.%m.%Y")
 
     freie_startzeiten = []
-
     stunden = 8
     minuten = 30
 
     while True:
         startzeit = f"{stunden:02d}:{minuten:02d}"
+        slot_dt = datetime.strptime(f"{datum} {startzeit}", "%d.%m.%Y %H:%M")
 
-        slot_dt = datetime.strptime(datum + " " + startzeit, "%d.%m.%Y %H:%M")
-
-        if datum == heute_str:
-            if slot_dt < jetzt + timedelta(minutes=60):
-                minuten += 15
-                if minuten == 60:
-                    minuten = 0
-                    stunden += 1
-                continue
+        if datum == heute_str and slot_dt < jetzt + timedelta(minutes=60):
+            minuten += 15
+            if minuten == 60:
+                minuten = 0
+                stunden += 1
+            continue
 
         start_minuten = stunden * 60 + minuten
         ende_minuten = start_minuten + dauer
-
         if ende_minuten > 18 * 60:
             break
-        
-        slots = slots_fuer_termin(datum, startzeit, dauer)
-        
-        kollidiert = False
 
-        for s in slots:
-            if s in belegte_slots:
-                kollidiert = True
-                break
-        if not kollidiert:
+        slots = slots_fuer_termin(datum, startzeit, dauer)
+        if all(slot not in belegte_slots for slot in slots):
             freie_startzeiten.append(startzeit)
 
         minuten += 15
         if minuten == 60:
             minuten = 0
-            stunden+= 1
+            stunden += 1
+
     return freie_startzeiten
 
-def freie_morgen(dauer, belegte_slots):
-    morgen = datetime.today() + timedelta(days=1)
-    
-    datum_morgen = morgen.strftime("%d.%m.%Y")
-    
-    freie = freie_termine(datum_morgen, dauer, belegte_slots)
 
-    return datum_morgen, freie
+def buchungen_pro_tag(termine, telefon, datum):
+    return sum(
+        1
+        for termin in termine
+        if termin.get("telefon") == telefon and termin.get("datum") == datum
+    )
 
 
-dauer_min = {
-    "Haare - Schneiden ab XX €": 30,
-    "Haare - Färben ab XX €": 60,
-    "Haare - Stylen ab XX €": 30,
-    "Haare & Bart ab XX €": 45,
-    "Haare - Beratung ab XX €": 45,
+def sende_emails_sicher(termin, email_kunde):
+    try:
+        benachrichtigung_senden(termin)
+        bestaetigung_senden(termin, email_kunde)
+    except Exception as exc:
+        st.warning(f"Buchung gespeichert, aber E-Mail-Versand fehlgeschlagen: {exc}")
+
+
+def reset_auswahl():
+    st.session_state.gewaehlte_uhrzeit = None
+    st.session_state.gewaehltes_datum = None
+
+
+DAUER_MIN = {
+    "Haare - Schneiden ab XX EUR": 30,
+    "Haare - Faerben ab XX EUR": 60,
+    "Haare - Stylen ab XX EUR": 30,
+    "Haare & Bart ab XX EUR": 45,
+    "Haare - Beratung ab XX EUR": 45,
     "Haare - Extrawunsch": 45,
-    "Bart - Trimmen ab XX €": 15,
-    "Bart - Kontur ab XX €": 15,
-    "Bart - Beratung ab XX €": 30,
+    "Bart - Trimmen ab XX EUR": 15,
+    "Bart - Kontur ab XX EUR": 15,
+    "Bart - Beratung ab XX EUR": 30,
     "Bart - Extrawunsch": 15,
 }
 
-kategorien = {
-    "Haare": ["Haare - Schneiden ab XX €", "Haare - Färben ab XX €", "Haare - Stylen ab XX €", "Haare & Bart ab XX €", "Haare - Beratung ab XX €", "Haare - Extrawunsch"],
-    "Bart": ["Bart - Trimmen ab XX €", "Bart - Kontur ab XX €", "Bart - Beratung ab XX €", "Bart - Extrawunsch"],
-    "Anderes": ["Anderes - Event/Hochzeit", "Anderes - Beratung", "Anderes - Extrawunsch"],
+KATEGORIEN = {
+    "Haare": [
+        "Haare - Schneiden ab XX EUR",
+        "Haare - Faerben ab XX EUR",
+        "Haare - Stylen ab XX EUR",
+        "Haare & Bart ab XX EUR",
+        "Haare - Beratung ab XX EUR",
+        "Haare - Extrawunsch",
+    ],
+    "Bart": [
+        "Bart - Trimmen ab XX EUR",
+        "Bart - Kontur ab XX EUR",
+        "Bart - Beratung ab XX EUR",
+        "Bart - Extrawunsch",
+    ],
+    "Anderes": [
+        "Anderes - Event/Hochzeit",
+        "Anderes - Beratung",
+        "Anderes - Extrawunsch",
+    ],
 }
 
-st.set_page_config(
-    page_title="Termin buchen",
-    page_icon="💈",
-    layout="wide"
-)
-st.title("📅 Online Termin buchen")
-st.caption("Schnell & unkompliziert Termin auswählen")
+st.set_page_config(page_title="Termin buchen", page_icon="💈", layout="wide")
+st.title("Online Termin buchen")
+st.caption("Schnell und unkompliziert Termin auswaehlen")
 st.markdown("---")
-st.info("Öffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
+st.info("Oeffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
 
 termine, belegte_slots = laden()
 
-if "step" not in st.session_state: st.session_state.step = 1
-
-if "name" not in st.session_state: st.session_state.name = ""
-
-if "kategorie" not in st.session_state: st.session_state.kategorie = ""
-   
-if "service" not in st.session_state: st.session_state.service = ""
-
-if "letzte_buchung" not in st.session_state: st.session_state.letzte_buchung = None
-
-if "gebucht" not in st.session_state: st.session_state.gebucht = False
-
-if "admin_versuche" not in st.session_state: st.session_state.admin_versuche = 0
-
-if "is_admin" not in st.session_state: st.session_state.is_admin = False
-    
-if "gewaehlte_uhrzeit" not in st.session_state: st.session_state.gewaehlte_uhrzeit = None
-
-if "gewaehltes_datum" not in st.session_state: st.session_state.gewaehltes_datum = None
+if "step" not in st.session_state:
+    st.session_state.step = 1
+if "name" not in st.session_state:
+    st.session_state.name = ""
+if "kategorie" not in st.session_state:
+    st.session_state.kategorie = ""
+if "service" not in st.session_state:
+    st.session_state.service = ""
+if "letzte_buchung" not in st.session_state:
+    st.session_state.letzte_buchung = None
+if "gebucht" not in st.session_state:
+    st.session_state.gebucht = False
+if "admin_versuche" not in st.session_state:
+    st.session_state.admin_versuche = 0
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
+if "gewaehlte_uhrzeit" not in st.session_state:
+    st.session_state.gewaehlte_uhrzeit = None
+if "gewaehltes_datum" not in st.session_state:
+    st.session_state.gewaehltes_datum = None
+if "slot_datum_widget" not in st.session_state:
+    st.session_state.slot_datum_widget = date.today()
 
 if st.session_state.step == 1:
     st.write(f"**Schritt {st.session_state.step} von 3**")
@@ -260,53 +291,47 @@ if st.session_state.step == 1:
 
     col1, col2 = st.columns(2)
     with col2:
-        if st.button("Weiter ▶️"):
+        if st.button("Weiter"):
             if not name.strip():
                 st.error("Bitte Name eingeben.")
             else:
                 st.session_state.name = name.strip()
                 st.session_state.step = 2
                 st.rerun()
+
     with st.sidebar:
-        if st.button("🔒 Admin-Bereich"):
+        if st.button("Admin-Bereich"):
             st.session_state.admin_versuche = 0
-            st.session_state.step = 99 
+            st.session_state.step = 99
             st.rerun()
 
 elif st.session_state.step == 2:
     st.write(f"**Schritt {st.session_state.step} von 3**")
-    st.write(f"Hallo **{st.session_state.name}** 👋")
-    
-    kats = list(kategorien.keys())
-    
-    if st.session_state.kategorie in kats:
-        kat_index = kats.index(st.session_state.kategorie)
-    else:
-        kat_index = 0
-        
-    kategorie = st.selectbox("Kategorie", kats, index=kat_index)
+    st.write(f"Hallo **{st.session_state.name}**")
 
-    services = kategorien[kategorie]
-    
-    if st.session_state.service in services:
-        srv_index = services.index(st.session_state.service)
-    else:
-        srv_index = 0
-        
+    kategorien_liste = list(KATEGORIEN.keys())
+    kat_index = kategorien_liste.index(st.session_state.kategorie) if st.session_state.kategorie in kategorien_liste else 0
+    kategorie = st.selectbox("Kategorie", kategorien_liste, index=kat_index)
+
+    services = KATEGORIEN[kategorie]
+    srv_index = services.index(st.session_state.service) if st.session_state.service in services else 0
     service = st.selectbox("Service", services, index=srv_index)
 
-    if service in dauer_min:
-        st.caption(f"Dauer: {dauer_min[service]} Minuten")
-   
+    if service in DAUER_MIN:
+        st.caption(f"Dauer: {DAUER_MIN[service]} Minuten")
+
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("◀️ Zurück"):
+        if st.button("Zurueck"):
             st.session_state.step = 1
             st.rerun()
     with col2:
-        if st.button("Weiter ▶️"):
+        if st.button("Weiter"):
+            if service != st.session_state.service:
+                reset_auswahl()
             st.session_state.kategorie = kategorie
             st.session_state.service = service
+            st.session_state.gebucht = False
             st.session_state.step = 3
             st.rerun()
 
@@ -316,20 +341,15 @@ elif st.session_state.step == 3:
     st.write(f"**Service:** {service}")
 
     if service.startswith("Anderes -"):
-        modus = "manual"  
-
+        modus = "manual"
     elif "Beratung" in service or "Extrawunsch" in service:
-        art = st.radio("Wie soll das laufen?", ["Termin vor Ort", "Rückruf / E-Mail"])
-            
-        if art == "Rückruf / E-Mail":
-            modus = "manual"
-        else:
-            modus = "standard"
+        art = st.radio("Wie soll das laufen?", ["Termin vor Ort", "Rueckruf / E-Mail"])
+        modus = "manual" if art == "Rueckruf / E-Mail" else "standard"
     else:
-        modus = "standard" 
+        modus = "standard"
 
     if modus == "manual":
-        st.info("Dieser Service läuft als **manuelle Anfrage** (kein fester Zeitslot).")
+        st.info("Dieser Service laeuft als manuelle Anfrage ohne festen Zeitslot.")
 
         email = st.text_input("E-Mail")
         telefon = st.text_input("Telefon")
@@ -337,18 +357,18 @@ elif st.session_state.step == 3:
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("◀️ Zurück"):
+            if st.button("Zurueck"):
                 st.session_state.step = 2
                 st.rerun()
 
         with col2:
-            if st.button("📩 Anfrage speichern"):
+            if st.button("Anfrage speichern"):
                 if not email_ok(email):
                     st.error("Bitte korrekte E-Mail eingeben.")
-                elif not wunsch.strip():
-                    st.error("Bitte Wunsch eingeben.")
                 elif not telefon.strip():
                     st.error("Bitte Telefonnummer angeben.")
+                elif not wunsch.strip():
+                    st.error("Bitte Wunsch eingeben.")
                 else:
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
@@ -356,62 +376,65 @@ elif st.session_state.step == 3:
                         "Telefon": telefon.strip(),
                         "Service": service,
                         "Email": email.strip(),
-                        "Wunsch": wunsch.strip()
-                        }
-                    
-                    speichern(st.session_state.letzte_buchung, ist_anfrage=True)
-                    benachrichtigung_senden(st.session_state.letzte_buchung)
-                    bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
-                    
+                        "Wunsch": wunsch.strip(),
+                    }
+
+                    try:
+                        speichern(st.session_state.letzte_buchung, ist_anfrage=True)
+                    except Exception as exc:
+                        st.error(f"Anfrage konnte nicht gespeichert werden: {exc}")
+                        st.stop()
+
+                    sende_emails_sicher(st.session_state.letzte_buchung, email.strip())
                     st.session_state.step = 4
                     st.rerun()
 
     else:
-        if service in dauer_min:
-            dauer = dauer_min[service]
+        dauer = DAUER_MIN[service]
 
         telefon = st.text_input("Telefonnummer")
+        email = st.text_input("E-Mail (fuer Bestaetigung)")
+        datum = st.date_input("Datum auswaehlen", key="slot_datum_widget", min_value=date.today())
+        datum_str = datum.strftime("%d.%m.%Y")
 
-        email = st.text_input("E-Mail (für Bestätigung)")
+        if datum_str != st.session_state.gewaehltes_datum:
+            st.session_state.gewaehlte_uhrzeit = None
+            st.session_state.gewaehltes_datum = datum_str
 
-        datum = st.date_input("Datum auswählen", min_value=date.today())
+        freie = freie_termine(datum_str, dauer, belegte_slots)
 
-        if datum:
-            datum_str = datum.strftime("%d.%m.%Y")
+        if freie:
+            st.subheader("Freie Uhrzeiten")
+            st.write("Tippe auf eine Uhrzeit, um den Termin auszuwaehlen.")
+            cols = st.columns(4)
+            for index, slot in enumerate(freie):
+                with cols[index % 4]:
+                    if st.button(slot, key=f"slot_{datum_str}_{slot}", use_container_width=True):
+                        st.session_state.gewaehlte_uhrzeit = slot
+                        st.session_state.gewaehltes_datum = datum_str
+                        st.rerun()
+        else:
+            st.warning("An diesem Tag sind keine Termine mehr frei.")
 
-            freie = freie_termine(datum_str, dauer, belegte_slots)
-
-            if freie:
-                st.subheader("Freie Uhrzeiten")
-                st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
-                for slot in freie:
-                    if st.button(slot, key=f"slot_{slot}", use_container_width=True):
-                        st.session_state["gewaehlte_uhrzeit"] = slot
-                        st.session_state["gewaehltes_datum"] = datum_str
-
-                        if st.session_state.get("gewaehlte_uhrzeit") and st.session_state.get("gewaehltes_datum"):
-                            st.success(
-                            f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-                            )
-
-            else:
-                st.warning("An diesem Tag sind keine Termine mehr frei.")
+        if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
+            st.success(
+                f"Gewaehlter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+            )
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("◀️ Zurück"):
+            if st.button("Zurueck"):
                 st.session_state.step = 2
                 st.session_state.gebucht = False
+                reset_auswahl()
                 st.rerun()
 
         with col2:
             buchen = st.button("Termin buchen", disabled=st.session_state.gebucht)
-
             if buchen:
                 st.session_state.gebucht = True
-
-                datum = st.session_state.gewaehltes_datum
-                uhrzeit = st.session_state.gewaehlte_uhrzeit 
+                datum_final = st.session_state.gewaehltes_datum
+                uhrzeit_final = st.session_state.gewaehlte_uhrzeit
 
                 if not telefon.strip():
                     st.error("Bitte Telefonnummer angeben.")
@@ -423,81 +446,84 @@ elif st.session_state.step == 3:
                     st.session_state.gebucht = False
                     st.stop()
 
-                if not st.session_state.gewaehlte_uhrzeit:
-                    st.error("Bitte erst eine Uhrzeit auswählen.")
+                if not datum_final or not uhrzeit_final:
+                    st.error("Bitte erst eine Uhrzeit auswaehlen.")
                     st.session_state.gebucht = False
                     st.stop()
 
-                slots_liste = slots_fuer_termin(datum, uhrzeit, dauer)
+                termine_aktuell, belegte_slots_aktuell = laden()
+                slots_liste = slots_fuer_termin(datum_final, uhrzeit_final, dauer)
 
+                if any(slot in belegte_slots_aktuell for slot in slots_liste):
+                    st.error("Dieser Termin wurde gerade schon vergeben. Bitte waehle eine andere Uhrzeit.")
+                    st.session_state.gebucht = False
+                    st.stop()
 
-                count = sum(
-                    1 for t in termine if t.get("Telefon") == telefon and t.get("Datum") == datum
-                )
-
+                count = buchungen_pro_tag(termine_aktuell, telefon.strip(), datum_final)
                 if count >= 4:
                     st.error("Diese Telefonnummer hat bereits mehrere Termine an diesem Tag gebucht.")
                     st.session_state.gebucht = False
                     st.stop()
 
                 st.session_state.letzte_buchung = {
-                    "modus" : "standard",
+                    "modus": "standard",
                     "Name": st.session_state.name,
                     "Telefon": telefon.strip(),
                     "Service": service,
-                    "Datum": datum,
-                    "Uhrzeit": uhrzeit,
+                    "Datum": datum_final,
+                    "Uhrzeit": uhrzeit_final,
                     "Termindauer": dauer,
-                    "Email" : email.strip()
-                    }
-                
-                speichern(st.session_state.letzte_buchung, ist_anfrage=False)
-                benachrichtigung_senden(st.session_state.letzte_buchung)
-                bestaetigung_senden(st.session_state.letzte_buchung, email.strip())
+                    "Email": email.strip(),
+                }
 
+                try:
+                    speichern(st.session_state.letzte_buchung, ist_anfrage=False)
+                except Exception as exc:
+                    st.error(f"Termin konnte nicht gespeichert werden: {exc}")
+                    st.session_state.gebucht = False
+                    st.stop()
+
+                sende_emails_sicher(st.session_state.letzte_buchung, email.strip())
                 st.session_state.step = 4
                 st.rerun()
 
 elif st.session_state.step == 4:
-    st.success("Termin gebucht ✅")
+    st.success("Termin gespeichert")
+    buchung = st.session_state.letzte_buchung or {}
 
-    b = st.session_state.letzte_buchung or {}
-    
-    if b["modus"] == "standard":
-        st.write("**Name:**", b.get("Name", "-"))
-        st.write("**Telefon:**", b.get("Telefon", "-"))
-        st.write("**Service:**", b.get("Service", "-"))
-        st.write("**Datum:**", b.get("Datum", "-"))
-        st.write("**Uhrzeit:**", b.get("Uhrzeit", "-"))
-        st.write("**Dauer:**", f"{b.get('Termindauer', '-') } Minuten")
-        st.write("**E-Mail:**", b.get("Email", "-"))
+    if buchung.get("modus") == "standard":
+        st.write("**Name:**", buchung.get("Name", "-"))
+        st.write("**Telefon:**", buchung.get("Telefon", "-"))
+        st.write("**Service:**", buchung.get("Service", "-"))
+        st.write("**Datum:**", buchung.get("Datum", "-"))
+        st.write("**Uhrzeit:**", buchung.get("Uhrzeit", "-"))
+        st.write("**Dauer:**", f"{buchung.get('Termindauer', '-')} Minuten")
+        st.write("**E-Mail:**", buchung.get("Email", "-"))
+    elif buchung.get("modus") == "manual":
+        st.write("**Name:**", buchung.get("Name", "-"))
+        st.write("**Telefon:**", buchung.get("Telefon", "-"))
+        st.write("**Service:**", buchung.get("Service", "-"))
+        st.write("**Wunsch:**", buchung.get("Wunsch", "-"))
+        st.write("**E-Mail:**", buchung.get("Email", "-"))
 
-    elif b["modus"] == "manual":
-        st.write("**Name:**", b.get("Name", "-"))
-        st.write("**Telefon:**", b.get("Telefon", "-"))
-        st.write("**Service:**", b.get("Service", "-"))
-        st.write("**Wunsch:**", b.get("Wunsch", "-"))
-        st.write("**E-Mail:**", b.get("Email", "-"))
+    st.info("Wenn der Mailversand funktioniert hat, wurde eine Bestaetigung verschickt.")
 
-    st.info("Sie sollten eine Bestätigungs-Email bekommen haben.")
-    
     if st.button("Noch einen Termin buchen"):
         st.session_state.step = 1
         st.session_state.gebucht = False
         st.session_state.letzte_buchung = None
-        st.session_state.gewaehlte_uhrzeit = None
-        st.session_state.gewaehltes_datum = None
+        reset_auswahl()
         st.rerun()
 
     st.stop()
-
 
 elif st.session_state.step == 5:
     if not st.session_state.is_admin:
         st.session_state.step = 99
         st.rerun()
-    st.title("🔒 Admin Dashboard")
-    if st.button("⬅️ Zurück"):
+
+    st.title("Admin Dashboard")
+    if st.button("Zurueck"):
         st.session_state.step = 1
         st.rerun()
 
@@ -509,48 +535,44 @@ elif st.session_state.step == 5:
         standard = []
         manual = []
 
-        for t in termine:
-            if "datum" in t and "uhrzeit" in t:
-                dt = datetime.strptime(
-                    t["datum"] + " " + t["uhrzeit"],
-                    "%d.%m.%Y %H:%M"
+        for termin in termine:
+            if termin.get("datum") and termin.get("uhrzeit"):
+                termin_copy = termin.copy()
+                termin_copy["Sortierung"] = datetime.strptime(
+                    f"{termin['datum']} {termin['uhrzeit']}",
+                    "%d.%m.%Y %H:%M",
                 )
-                t_copy = t.copy()
-                t_copy["Sortierung"] = dt
-                standard.append(t_copy)
+                standard.append(termin_copy)
             else:
-                manual.append(t)
+                manual.append(termin)
 
-        standard.sort(key=lambda x: x["Sortierung"])
+        standard.sort(key=lambda eintrag: eintrag["Sortierung"])
+        for termin in standard:
+            del termin["Sortierung"]
 
-        for t in standard:
-            del t["Sortierung"]
-
-        st.subheader("📅 Terminbuchungen")
+        st.subheader("Terminbuchungen")
         st.dataframe(pd.DataFrame(standard), use_container_width=True)
 
-        st.subheader("📩 Manuelle Anfragen")
+        st.subheader("Manuelle Anfragen")
         st.dataframe(pd.DataFrame(manual), use_container_width=True)
 
-    optionen = [f"{i+1} - {t.get('name','-')} - {t.get('service','-')}" for i, t in enumerate(termine)]
-    auswahl = st.selectbox("Eintrag auswählen zum Löschen", optionen)
+        optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')}" for i, t in enumerate(termine)]
+        auswahl = st.selectbox("Eintrag auswaehlen zum Loeschen", optionen)
 
-    if st.button("🗑️ Löschen"):
-        index = optionen.index(auswahl)
-        t = termine[index]
-    
-        if "datum" in t:
-            supabase.table("termine").delete().eq("id", t["id"]).execute()
-        else:
-            supabase.table("anfragen").delete().eq("id", t["id"]).execute()
-    
-        st.success("Eintrag gelöscht")
-        st.rerun()
+        if st.button("Loeschen"):
+            index = optionen.index(auswahl)
+            termin = termine[index]
 
+            if "datum" in termin:
+                supabase.table("termine").delete().eq("id", termin["id"]).execute()
+            else:
+                supabase.table("anfragen").delete().eq("id", termin["id"]).execute()
+
+            st.success("Eintrag geloescht")
+            st.rerun()
 
 elif st.session_state.step == 99:
-    st.title("🔒 Admin Login")
-
+    st.title("Admin Login")
     passwort = st.text_input("Passwort eingeben", type="password")
 
     if st.button("Anmelden"):
@@ -560,13 +582,14 @@ elif st.session_state.step == 99:
             st.rerun()
         else:
             st.session_state.admin_versuche += 1
-            st.error(f"Falsches Passwort. {3 - st.session_state.admin_versuche} Versuche übrig.")
+            rest = 3 - st.session_state.admin_versuche
+            st.error(f"Falsches Passwort. {rest} Versuche uebrig.")
 
             if st.session_state.admin_versuche >= 3:
                 st.warning("Zu viele Fehlversuche.")
                 st.session_state.step = 1
                 st.rerun()
 
-    if st.button("⬅️ Zurück"):
+    if st.button("Zurueck"):
         st.session_state.step = 1
         st.rerun()
