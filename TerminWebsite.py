@@ -220,31 +220,44 @@ def reset_auswahl():
 
 
 DAUER_MIN = {
-    "Haare - Schneiden ab XX EUR": 30,
-    "Haare - Färben ab XX EUR": 60,
-    "Haare - Stylen ab XX EUR": 30,
-    "Haare & Bart ab XX EUR": 45,
-    "Haare - Beratung ab XX EUR": 45,
+    "Haare - Schneiden": 30,
+    "Haare - Färben": 60,
+    "Haare - Stylen": 30,
+    "Haare & Bart": 45,
+    "Haare - Beratung": 45,
     "Haare - Extrawunsch": 45,
-    "Bart - Trimmen ab XX EUR": 15,
-    "Bart - Kontur ab XX EUR": 15,
-    "Bart - Beratung ab XX EUR": 30,
+    "Bart - Trimmen": 15,
+    "Bart - Kontur": 15,
+    "Bart - Beratung": 30,
     "Bart - Extrawunsch": 15,
+}
+
+PREISE = {
+    "Haare - Schneiden": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Haare - Färben": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Haare - Stylen": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Haare & Bart": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Haare - Beratung": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Haare - Extrawunsch": {"Kurzhaar": "ab XX €", "Langhaar": "ab YY €"},
+    "Bart - Trimmen": "ab XX €",
+    "Bart - Kontur": "ab XX €",
+    "Bart - Beratung": "ab XX €",
+    "Bart - Extrawunsch": "ab XX €",
 }
 
 KATEGORIEN = {
     "Haare": [
-        "Haare - Schneiden ab XX EUR",
-        "Haare - Färben ab XX EUR",
-        "Haare - Stylen ab XX EUR",
-        "Haare & Bart ab XX EUR",
-        "Haare - Beratung ab XX EUR",
+        "Haare - Schneiden",
+        "Haare - Färben",
+        "Haare - Stylen",
+        "Haare & Bart",
+        "Haare - Beratung",
         "Haare - Extrawunsch",
     ],
     "Bart": [
-        "Bart - Trimmen ab XX EUR",
-        "Bart - Kontur ab XX EUR",
-        "Bart - Beratung ab XX EUR",
+        "Bart - Trimmen",
+        "Bart - Kontur",
+        "Bart - Beratung",
         "Bart - Extrawunsch",
     ],
     "Anderes": [
@@ -319,16 +332,22 @@ elif st.session_state.step == 2:
     srv_index = services.index(st.session_state.service) if st.session_state.service in services else 0
     service = st.selectbox("Service", services, index=srv_index)
 
-    # Haartyp-Auswahl für Haare-Services mit Schneiden
+    # Haartyp-Auswahl für Services, die mit "Haare" beginnen
     haartyp = None
-    if kategorie == "Haare" in service:
+    if service.startswith("Haare"):
         haartyp = st.radio("Haartyp", ["Kurzhaar", "Langhaar"], index=0 if st.session_state.haartyp == "Kurzhaar" else 1)
 
-    # Dauer anzeigen
+    # Dauer und Preis anzeigen
     if service in DAUER_MIN:
         basis_dauer = DAUER_MIN[service]
         zusatz = 15 if haartyp == "Langhaar" else 0
         st.caption(f"Dauer: {basis_dauer + zusatz} Minuten")
+        
+        if service in PREISE:
+            preis = PREISE[service]
+            if isinstance(preis, dict):
+                preis = preis.get(haartyp, "ab XX €")
+            st.caption(f"Preis: {preis}")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -403,7 +422,7 @@ elif st.session_state.step == 3:
 
     else:
         basis_dauer = DAUER_MIN[service]
-        zusatz = 15 if st.session_state.haartyp == "Langhaar" and st.session_state.kategorie == "Haare" in service else 0
+        zusatz = 15 if st.session_state.haartyp == "Langhaar" else 0
         dauer = basis_dauer + zusatz
 
         telefon = st.text_input("Telefonnummer")
