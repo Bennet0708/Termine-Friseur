@@ -221,7 +221,7 @@ def reset_auswahl():
 
 DAUER_MIN = {
     "Haare - Schneiden ab XX EUR": 30,
-    "Haare - Faerben ab XX EUR": 60,
+    "Haare - Färben ab XX EUR": 60,
     "Haare - Stylen ab XX EUR": 30,
     "Haare & Bart ab XX EUR": 45,
     "Haare - Beratung ab XX EUR": 45,
@@ -235,7 +235,7 @@ DAUER_MIN = {
 KATEGORIEN = {
     "Haare": [
         "Haare - Schneiden ab XX EUR",
-        "Haare - Faerben ab XX EUR",
+        "Haare - Färben ab XX EUR",
         "Haare - Stylen ab XX EUR",
         "Haare & Bart ab XX EUR",
         "Haare - Beratung ab XX EUR",
@@ -270,6 +270,8 @@ if "kategorie" not in st.session_state:
     st.session_state.kategorie = ""
 if "service" not in st.session_state:
     st.session_state.service = ""
+if "haartyp" not in st.session_state:
+    st.session_state.haartyp = "Kurzhaar"
 if "letzte_buchung" not in st.session_state:
     st.session_state.letzte_buchung = None
 if "gebucht" not in st.session_state:
@@ -317,8 +319,16 @@ elif st.session_state.step == 2:
     srv_index = services.index(st.session_state.service) if st.session_state.service in services else 0
     service = st.selectbox("Service", services, index=srv_index)
 
+    # Haartyp-Auswahl für Haare-Services mit Schneiden
+    haartyp = None
+    if kategorie == "Haare" in service:
+        haartyp = st.radio("Haartyp", ["Kurzhaar", "Langhaar"], index=0 if st.session_state.haartyp == "Kurzhaar" else 1)
+
+    # Dauer anzeigen
     if service in DAUER_MIN:
-        st.caption(f"Dauer: {DAUER_MIN[service]} Minuten")
+        basis_dauer = DAUER_MIN[service]
+        zusatz = 15 if haartyp == "Langhaar" else 0
+        st.caption(f"Dauer: {basis_dauer + zusatz} Minuten")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -331,6 +341,8 @@ elif st.session_state.step == 2:
                 reset_auswahl()
             st.session_state.kategorie = kategorie
             st.session_state.service = service
+            if haartyp:
+                st.session_state.haartyp = haartyp
             st.session_state.gebucht = False
             st.session_state.step = 3
             st.rerun()
@@ -390,7 +402,9 @@ elif st.session_state.step == 3:
                     st.rerun()
 
     else:
-        dauer = DAUER_MIN[service]
+        basis_dauer = DAUER_MIN[service]
+        zusatz = 15 if st.session_state.haartyp == "Langhaar" and st.session_state.kategorie == "Haare" in service else 0
+        dauer = basis_dauer + zusatz
 
         telefon = st.text_input("Telefonnummer")
         email = st.text_input("E-Mail (für Bestätigung)")
