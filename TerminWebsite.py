@@ -23,9 +23,9 @@ def laden():
 
         belegte_slots = set()
         for termin in termine:
-            datum = termin.get("Datum")
-            uhrzeit = termin.get("Uhrzeit")
-            dauer = termin.get("Termindauer")
+            datum = termin.get("datum")
+            uhrzeit = termin.get("uhrzeit")
+            dauer = termin.get("termindauer")
             if datum and uhrzeit and dauer:
                 for slot in slots_fuer_termin(datum, uhrzeit, dauer):
                     belegte_slots.add(slot)
@@ -40,22 +40,22 @@ def speichern(termin_dict, ist_anfrage=False):
     if ist_anfrage:
         return supabase.table("anfragen").insert(
             {
-                "Name": termin_dict.get("Name"),
-                "Telefon": termin_dict.get("Telefon"),
-                "Service": termin_dict.get("Service"),
-                "Email": termin_dict.get("Email"),
-                "Wunsch": termin_dict.get("Wunsch"),
+                "name": termin_dict.get("name"),
+                "telefon": termin_dict.get("telefon"),
+                "service": termin_dict.get("service"),
+                "email": termin_dict.get("email"),
+                "wunsch": termin_dict.get("wunsch"),
             }
         ).execute()
 
     return supabase.table("termine").insert(
         {
-            "Name": termin_dict.get("Name"),
-            "Telefon": termin_dict.get("Telefon"),
-            "Datum": termin_dict.get("Datum"),
-            "Uhrzeit": termin_dict.get("Uhrzeit"),
-            "Service": termin_dict.get("Service"),
-            "Termindauer": termin_dict.get("Termindauer"),
+            "name": termin_dict.get("name"),
+            "telefon": termin_dict.get("telefon"),
+            "datum": termin_dict.get("datum"),
+            "uhrzeit": termin_dict.get("uhrzeit"),
+            "service": termin_dict.get("service"),
+            "termindauer": termin_dict.get("termindauer"),
         }
     ).execute()
 
@@ -65,22 +65,22 @@ def benachrichtigung_senden(termin):
         inhalt = f"""
 Neuer Termin gebucht!
 
-Name: {termin['Name']}
-Telefon: {termin['Telefon']}
-Service: {termin['Service']}
-Datum: {termin['Datum']}
-Uhrzeit: {termin['Uhrzeit']}
-Dauer: {termin['Termindauer']} Minuten
+Name: {termin['name']}
+Telefon: {termin['telefon']}
+Service: {termin['service']}
+Datum: {termin['datum']}
+Uhrzeit: {termin['uhrzeit']}
+Dauer: {termin['termindauer']} Minuten
         """
     else:
         inhalt = f"""
 Neue manuelle Anfrage!
 
-Name: {termin['Name']}
-Telefon: {termin['Telefon']}
-Service: {termin['Service']}
-Wunsch: {termin['Wunsch']}
-E-Mail: {termin['Email']}
+Name: {termin['name']}
+Telefon: {termin['telefon']}
+Service: {termin['service']}
+Wunsch: {termin['wunsch']}
+E-Mail: {termin['email']}
         """
 
     msg = MIMEText(inhalt, "plain", "utf-8")
@@ -99,31 +99,31 @@ E-Mail: {termin['Email']}
 def bestaetigung_senden(termin, email_kunde):
     if termin.get("modus") == "standard":
         inhalt = f"""
-Hallo {termin['Name']}!
+Hallo {termin['name']}!
 
 Dein Termin wurde erfolgreich gebucht.
 
-Service: {termin['Service']}
-Datum: {termin['Datum']}
-Uhrzeit: {termin['Uhrzeit']}
-Dauer: {termin['Termindauer']} Minuten
+Service: {termin['service']}
+Datum: {termin['datum']}
+Uhrzeit: {termin['uhrzeit']}
+Dauer: {termin['termindauer']} Minuten
 
 Bei Fragen melde dich direkt beim Salon.
         """
     else:
         inhalt = f"""
-Hallo {termin['Name']}!
+Hallo {termin['name']}!
 
-Deine Anfrage wurde erfolgreich uebermittelt.
+Deine Anfrage wurde erfolgreich übermittelt.
 
-Service: {termin['Service']}
-Dein Wunsch: {termin['Wunsch']}
+Service: {termin['service']}
+Dein Wunsch: {termin['wunsch']}
 
 Wir melden uns bald bei dir.
         """
 
     msg = MIMEText(inhalt, "plain", "utf-8")
-    msg["Subject"] = "Deine Buchungsbestaetigung"
+    msg["Subject"] = "Deine Buchungsbestätigung"
     msg["From"] = st.secrets["EMAIL_ABSENDER"]
     msg["To"] = email_kunde
 
@@ -372,11 +372,11 @@ elif st.session_state.step == 3:
                 else:
                     st.session_state.letzte_buchung = {
                         "modus": "manual",
-                        "Name": st.session_state.name,
-                        "Telefon": telefon.strip(),
-                        "Service": service,
-                        "Email": email.strip(),
-                        "Wunsch": wunsch.strip(),
+                        "name": st.session_state.name,
+                        "telefon": telefon.strip(),
+                        "service": service,
+                        "email": email.strip(),
+                        "wunsch": wunsch.strip(),
                     }
 
                     try:
@@ -467,13 +467,13 @@ elif st.session_state.step == 3:
 
                 st.session_state.letzte_buchung = {
                     "modus": "standard",
-                    "Name": st.session_state.name,
-                    "Telefon": telefon.strip(),
-                    "Service": service,
-                    "Datum": datum_final,
-                    "Uhrzeit": uhrzeit_final,
-                    "Termindauer": dauer,
-                    "Email": email.strip(),
+                    "name": st.session_state.name,
+                    "telefon": telefon.strip(),
+                    "service": service,
+                    "datum": datum_final,
+                    "uhrzeit": uhrzeit_final,
+                    "termindauer": dauer,
+                    "email": email.strip(),
                 }
 
                 try:
@@ -492,19 +492,19 @@ elif st.session_state.step == 4:
     buchung = st.session_state.letzte_buchung or {}
 
     if buchung.get("modus") == "standard":
-        st.write("**Name:**", buchung.get("Name", "-"))
-        st.write("**Telefon:**", buchung.get("Telefon", "-"))
-        st.write("**Service:**", buchung.get("Service", "-"))
-        st.write("**Datum:**", buchung.get("Datum", "-"))
-        st.write("**Uhrzeit:**", buchung.get("Uhrzeit", "-"))
-        st.write("**Dauer:**", f"{buchung.get('Termindauer', '-')} Minuten")
-        st.write("**E-Mail:**", buchung.get("Email", "-"))
+        st.write("**Name:**", buchung.get("name", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
+        st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Datum:**", buchung.get("datum", "-"))
+        st.write("**Uhrzeit:**", buchung.get("uhrzeit", "-"))
+        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
+        st.write("**E-Mail:**", buchung.get("email", "-"))
     elif buchung.get("modus") == "manual":
-        st.write("**Name:**", buchung.get("Name", "-"))
-        st.write("**Telefon:**", buchung.get("Telefon", "-"))
-        st.write("**Service:**", buchung.get("Service", "-"))
-        st.write("**Wunsch:**", buchung.get("Wunsch", "-"))
-        st.write("**E-Mail:**", buchung.get("Email", "-"))
+        st.write("**Name:**", buchung.get("name", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
+        st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Wunsch:**", buchung.get("wunsch", "-"))
+        st.write("**E-Mail:**", buchung.get("email", "-"))
 
     st.info("Wenn der Mailversand funktioniert hat, wurde eine Bestätigung verschickt.")
 
