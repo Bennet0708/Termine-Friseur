@@ -56,6 +56,7 @@ def speichern(termin_dict, ist_anfrage=False):
             "uhrzeit": termin_dict.get("uhrzeit"),
             "service": termin_dict.get("service"),
             "termindauer": termin_dict.get("termindauer"),
+            "email": termin_dict.get("email"),
         }
     ).execute()
 
@@ -161,8 +162,29 @@ def email_ok(email):
     muster = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
     return re.match(muster, email) is not None
 
+BLOCKIERTE_TAGE = [
+   "24.12.2026"
+   "25.12.2026"
+   "26.12.2026"
+   "31.12.2026"
+   "01.01.2027"
+]
 
+def ist_tag_blockiert(datum_str):
+    try:
+        datum = datetime.strptime(datum_str, "%d.%m.%Y")
+        if datum.weekday() == 6:
+            return True
+        if datum_str in BLOCKIERTE_TAGE:
+            return True
+        return False
+    except:
+        return False
+    
 def freie_termine(datum, dauer, belegte_slots):
+    if ist_tag_blockiert(datum):
+        return []
+    
     jetzt = datetime.now()
     heute_str = jetzt.strftime("%d.%m.%Y")
 
@@ -433,6 +455,10 @@ elif st.session_state.step == 3:
         datum = st.date_input("Datum auswählen", key="slot_datum_widget", min_value=date.today())
         datum_str = datum.strftime("%d.%m.%Y")
 
+        if ist_tag_blockiert(datum_str):
+            st.error("❌ An diesem Tag sind keine Termine möglich (Sonntag oder Urlaubstag).")
+            st.stop()
+
         if datum_str != st.session_state.gewaehltes_datum:
             st.session_state.gewaehlte_uhrzeit = None
             st.session_state.gewaehltes_datum = datum_str
@@ -449,7 +475,7 @@ elif st.session_state.step == 3:
                         st.session_state.gewaehlte_uhrzeit = slot
                         st.session_state.gewaehltes_datum = datum_str
         else:
-            st.warning("An diesem Tag sind keine Termine mehr frei.")
+            st.warning("An diesem Tag sind keine Termine frei.")
 
         if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
             st.success(
