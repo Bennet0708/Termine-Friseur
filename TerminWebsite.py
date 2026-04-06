@@ -555,25 +555,57 @@ elif st.session_state.step == 5:
         gewuenschte_spalten_manual = ['name', 'telefon', 'service', 'wunsch', 'email']
 
         st.subheader("Terminbuchungen")
-        st.dataframe(pd.DataFrame([{k: v for k, v in t.items() if k in gewuenschte_spalten_standard} for t in standard]), use_container_width=True)
+        if standard:
+            cols = st.columns([2, 2, 2, 2, 2, 2, 2, 1])
+            cols[0].write("**Name**")
+            cols[1].write("**Telefon**")
+            cols[2].write("**Datum**")
+            cols[3].write("**Uhrzeit**")
+            cols[4].write("**Service**")
+            cols[5].write("**Dauer**")
+            cols[6].write("**E-Mail**")
+            cols[7].write("**Löschen**")
+            for termin in standard:
+                cols[0].write(termin.get('name', '-'))
+                cols[1].write(termin.get('telefon', '-'))
+                cols[2].write(termin.get('datum', '-'))
+                cols[3].write(termin.get('uhrzeit', '-'))
+                cols[4].write(termin.get('service', '-'))
+                cols[5].write(f"{termin.get('termindauer', '-')} Min")
+                cols[6].write(termin.get('email', '-'))
+                if cols[7].button("🗑️", key=f"del_std_{termin['id']}"):
+                    supabase.table("termine").delete().eq("id", termin["id"]).execute()
+                    st.success("Termin gelöscht")
+                    st.rerun()
+        else:
+            st.info("Keine Terminbuchungen vorhanden.")
 
         st.subheader("Manuelle Anfragen")
-        st.dataframe(pd.DataFrame([{k: v for k, v in t.items() if k in gewuenschte_spalten_manual} for t in manual]), use_container_width=True)
+        if manual:
+            cols = st.columns([2, 2, 2, 2, 2, 1])
+            cols[0].write("**Name**")
+            cols[1].write("**Telefon**")
+            cols[2].write("**Service**")
+            cols[3].write("**Wunsch**")
+            cols[4].write("**E-Mail**")
+            cols[5].write("**Löschen**")
+            for termin in manual:
+                cols[0].write(termin.get('name', '-'))
+                cols[1].write(termin.get('telefon', '-'))
+                cols[2].write(termin.get('service', '-'))
+                cols[3].write(termin.get('wunsch', '-'))
+                cols[4].write(termin.get('email', '-'))
+                if cols[5].button("🗑️", key=f"del_man_{termin['id']}"):
+                    supabase.table("anfragen").delete().eq("id", termin["id"]).execute()
+                    st.success("Anfrage gelöscht")
+                    st.rerun()
+        else:
+            st.info("Keine manuellen Anfragen vorhanden.")
 
-        optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')} - {t.get('email', '-')}" for i, t in enumerate(termine)]
-        auswahl = st.selectbox("Eintrag auswählen zum löschen", optionen)
-
-        if st.button("Löschen"):
-            index = optionen.index(auswahl)
-            termin = termine[index]
-
-            if "datum" in termin:
-                supabase.table("termine").delete().eq("id", termin["id"]).execute()
-            else:
-                supabase.table("anfragen").delete().eq("id", termin["id"]).execute()
-
-            st.success("Eintrag gelöscht")
-            st.rerun()
+        # Entferne die alte selectbox und button, da jetzt inline
+        # optionen = ...
+        # auswahl = ...
+        # if st.button("Löschen"):
 
 elif st.session_state.step == 99:
     st.title("Admin Login")
