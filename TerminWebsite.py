@@ -372,9 +372,8 @@ elif st.session_state.step == 2:
     with col2:
         if st.button("Weiter"):
             if service != st.session_state.service:
-                reset_auswahl()
-            st.session_state.kategorie = kategorie
-            st.session_state.service = service
+                st.session_state.kategorie = kategorie
+                st.session_state.service = service
             if haartyp:
                 st.session_state.haartyp = haartyp
             st.session_state.gebucht = False
