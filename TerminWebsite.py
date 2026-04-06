@@ -322,7 +322,7 @@ elif st.session_state.step == 2:
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Zurueck"):
+        if st.button("Zurück"):
             st.session_state.step = 1
             st.rerun()
     with col2:
@@ -349,7 +349,7 @@ elif st.session_state.step == 3:
         modus = "standard"
 
     if modus == "manual":
-        st.info("Dieser Service laeuft als manuelle Anfrage ohne festen Zeitslot.")
+        st.info("Dieser Service läuft als manuelle Anfrage ohne festen Zeitslot.")
 
         email = st.text_input("E-Mail")
         telefon = st.text_input("Telefon")
@@ -523,11 +523,12 @@ elif st.session_state.step == 5:
         st.rerun()
 
     st.title("Admin Dashboard")
-    if st.button("Zurueck"):
+    if st.button("Zurück"):
         st.session_state.step = 1
         st.rerun()
 
     termine, belegte_slots = laden()
+    
 
     if not termine:
         st.info("Noch keine Termine gespeichert.")
@@ -556,8 +557,8 @@ elif st.session_state.step == 5:
         st.subheader("Manuelle Anfragen")
         st.dataframe(pd.DataFrame(manual), use_container_width=True)
 
-        optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')}" for i, t in enumerate(termine)]
-        auswahl = st.selectbox("Eintrag auswaehlen zum Loeschen", optionen)
+        optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')} - {t.get('email', '-')}" for i, t in enumerate(termine)]
+        auswahl = st.selectbox("Eintrag auswählen zum löschen", optionen)
 
         if st.button("Löschen"):
             index = optionen.index(auswahl)
