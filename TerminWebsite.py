@@ -174,7 +174,7 @@ def freie_termine(datum, dauer, belegte_slots):
         startzeit = f"{stunden:02d}:{minuten:02d}"
         slot_dt = datetime.strptime(f"{datum} {startzeit}", "%d.%m.%Y %H:%M")
 
-        if datum == heute_str and slot_dt < jetzt + timedelta(minutes=60):
+        if datum == heute_str and slot_dt < jetzt + timedelta(minutes=15):
             minuten += 15
             if minuten == 60:
                 minuten = 0
@@ -401,22 +401,10 @@ elif st.session_state.step == 3:
                 elif not wunsch.strip():
                     st.error("Bitte Wunsch eingeben.")
                 else:
-                    st.session_state.letzte_buchung = {
-                        "modus": "manual",
-                        "name": st.session_state.name,
-                        "telefon": telefon.strip(),
-                        "service": service,
-                        "email": email.strip(),
-                        "wunsch": wunsch.strip(),
-                    }
-
-                    try:
-                        speichern(st.session_state.letzte_buchung, ist_anfrage=True)
-                    except Exception as exc:
-                        st.error(f"Anfrage konnte nicht gespeichert werden: {exc}")
-                        st.stop()
-
-                    sende_emails_sicher(st.session_state.letzte_buchung, email.strip())
+                    st.session_state.telefon = telefon.strip()
+                    st.session_state.email = email.strip()
+                    st.session_state.wunsch = wunsch.strip()
+                    st.session_state.modus = "manual"
                     st.session_state.step = 4
                     st.rerun()
 
@@ -445,6 +433,7 @@ elif st.session_state.step == 3:
                     if st.button(slot, key=f"slot_{datum_str}_{slot}", use_container_width=True):
                         st.session_state.gewaehlte_uhrzeit = slot
                         st.session_state.gewaehltes_datum = datum_str
+                        st.session_state.step = 4
                         st.rerun()
         else:
             st.warning("An diesem Tag sind keine Termine mehr frei.")
@@ -463,64 +452,105 @@ elif st.session_state.step == 3:
                 st.rerun()
 
         with col2:
-            buchen = st.button("Termin buchen", disabled=st.session_state.gebucht)
-            if buchen:
-                st.session_state.gebucht = True
-                datum_final = st.session_state.gewaehltes_datum
-                uhrzeit_final = st.session_state.gewaehlte_uhrzeit
-
+            if st.button("Termin buchen"):
                 if not telefon.strip():
                     st.error("Bitte Telefonnummer angeben.")
-                    st.session_state.gebucht = False
-                    st.stop()
-
-                if not email_ok(email):
+                elif not email_ok(email):
                     st.error("Bitte korrekte E-Mail eingeben.")
-                    st.session_state.gebucht = False
-                    st.stop()
-
-                if not datum_final or not uhrzeit_final:
+                elif not st.session_state.gewaehltes_datum or not st.session_state.gewaehlte_uhrzeit:
                     st.error("Bitte erst eine Uhrzeit auswählen.")
-                    st.session_state.gebucht = False
-                    st.stop()
+                else:
+                    st.session_state.telefon = telefon.strip()
+                    st.session_state.email = email.strip()
+                    st.session_state.dauer = dauer
+                    st.session_state.modus = "standard"
+                    st.session_state.step = 4
+                    st.rerun()
+elif st.session_state.step == 4:
+    st.write("**Schritt 4 von 5**")
+    st.subheader("Bestätigung der Daten")
 
+    modus = st.session_state.modus
+    service = st.session_state.service
+    if modus == "standard":
+        datum_final = st.session_state.gewaehltes_datum
+        uhrzeit_final = st.session_state.gewaehlte_uhrzeit
+        telefon_val = st.session_state.telefon
+        email_val = st.session_state.email
+        buchung = {
+            "modus": "standard",
+            "name": st.session_state.name,
+            "telefon": telefon_val,
+            "service": service,
+            "datum": datum_final,
+            "uhrzeit": uhrzeit_final,
+            "termindauer": st.session_state.dauer,
+            "email": email_val,
+        }
+    else:
+        telefon_val = st.session_state.telefon
+        email_val = st.session_state.email
+        wunsch_val = st.session_state.wunsch
+        buchung = {
+            "modus": "manual",
+            "name": st.session_state.name,
+            "telefon": telefon_val,
+            "service": service,
+            "email": email_val,
+            "wunsch": wunsch_val,
+        }
+
+    if buchung.get("modus") == "standard":
+        st.write("**Name:**", buchung.get("name", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
+        st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Datum:**", buchung.get("datum", "-"))
+        st.write("**Uhrzeit:**", buchung.get("uhrzeit", "-"))
+        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
+        st.write("**E-Mail:**", buchung.get("email", "-"))
+    else:
+        st.write("**Name:**", buchung.get("name", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
+        st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Wunsch:**", buchung.get("wunsch", "-"))
+        st.write("**E-Mail:**", buchung.get("email", "-"))
+
+    st.write("**Alles korrekt?**")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Ja, buchen"):
+            # Hier die Validierungen und Speicherung
+            if buchung.get("modus") == "standard":
                 termine_aktuell, belegte_slots_aktuell = laden()
-                slots_liste = slots_fuer_termin(datum_final, uhrzeit_final, dauer)
+                slots_liste = slots_fuer_termin(datum_final, uhrzeit_final, st.session_state.dauer)
 
                 if any(slot in belegte_slots_aktuell for slot in slots_liste):
                     st.error("Dieser Termin wurde gerade schon vergeben. Bitte wähle eine andere Uhrzeit.")
-                    st.session_state.gebucht = False
                     st.stop()
 
-                count = buchungen_pro_tag(termine_aktuell, email.strip(), datum_final)
+                count = buchungen_pro_tag(termine_aktuell, email_val, datum_final)
                 if count >= 4:
                     st.error("Diese E-Mail-Adresse hat bereits mehrere Termine an diesem Tag gebucht.")
-                    st.session_state.gebucht = False
                     st.stop()
 
-                st.session_state.letzte_buchung = {
-                    "modus": "standard",
-                    "name": st.session_state.name,
-                    "telefon": telefon.strip(),
-                    "service": service,
-                    "datum": datum_final,
-                    "uhrzeit": uhrzeit_final,
-                    "termindauer": dauer,
-                    "email": email.strip(),
-                }
+            st.session_state.letzte_buchung = buchung
 
-                try:
-                    speichern(st.session_state.letzte_buchung, ist_anfrage=False)
-                except Exception as exc:
-                    st.error(f"Termin konnte nicht gespeichert werden: {exc}")
-                    st.session_state.gebucht = False
-                    st.stop()
+            try:
+                speichern(st.session_state.letzte_buchung, ist_anfrage=(buchung.get("modus") == "manual"))
+            except Exception as exc:
+                st.error(f"Fehler beim Speichern: {exc}")
+                st.stop()
 
-                sende_emails_sicher(st.session_state.letzte_buchung, email.strip())
-                st.session_state.step = 4
-                st.rerun()
+            sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
+            st.session_state.step = 5
+            st.rerun()
 
-elif st.session_state.step == 4:
+    with col2:
+        if st.button("Nein, zurück"):
+            st.session_state.step = 3
+            st.rerun()
+elif st.session_state.step == 5:
     st.success("Termin gespeichert")
     buchung = st.session_state.letzte_buchung or {}
 
