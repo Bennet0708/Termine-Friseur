@@ -23,9 +23,9 @@ def laden():
 
         belegte_slots = set()
         for termin in termine:
-            datum = termin.get("datum")
-            uhrzeit = termin.get("uhrzeit")
-            dauer = termin.get("termindauer")
+            datum = termin.get("Datum")
+            uhrzeit = termin.get("Uhrzeit")
+            dauer = termin.get("Termindauer")
             if datum and uhrzeit and dauer:
                 for slot in slots_fuer_termin(datum, uhrzeit, dauer):
                     belegte_slots.add(slot)
@@ -40,22 +40,22 @@ def speichern(termin_dict, ist_anfrage=False):
     if ist_anfrage:
         return supabase.table("anfragen").insert(
             {
-                "name": termin_dict.get("Name"),
-                "telefon": termin_dict.get("Telefon"),
-                "service": termin_dict.get("Service"),
-                "email": termin_dict.get("Email"),
-                "wunsch": termin_dict.get("Wunsch"),
+                "Name": termin_dict.get("Name"),
+                "Telefon": termin_dict.get("Telefon"),
+                "Service": termin_dict.get("Service"),
+                "Email": termin_dict.get("Email"),
+                "Wunsch": termin_dict.get("Wunsch"),
             }
         ).execute()
 
     return supabase.table("termine").insert(
         {
-            "name": termin_dict.get("Name"),
-            "telefon": termin_dict.get("Telefon"),
-            "datum": termin_dict.get("Datum"),
-            "uhrzeit": termin_dict.get("Uhrzeit"),
-            "service": termin_dict.get("Service"),
-            "termindauer": termin_dict.get("Termindauer"),
+            "Name": termin_dict.get("Name"),
+            "Telefon": termin_dict.get("Telefon"),
+            "Datum": termin_dict.get("Datum"),
+            "Uhrzeit": termin_dict.get("Uhrzeit"),
+            "Service": termin_dict.get("Service"),
+            "Termindauer": termin_dict.get("Termindauer"),
         }
     ).execute()
 
@@ -528,7 +528,7 @@ elif st.session_state.step == 5:
         st.rerun()
 
     termine, belegte_slots = laden()
-    
+
 
     if not termine:
         st.info("Noch keine Termine gespeichert.")
