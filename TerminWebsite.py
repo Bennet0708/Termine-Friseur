@@ -285,6 +285,16 @@ if "service" not in st.session_state:
     st.session_state.service = ""
 if "haartyp" not in st.session_state:
     st.session_state.haartyp = "Kurzhaar"
+if "modus" not in st.session_state:
+    st.session_state.modus = None
+if "telefon" not in st.session_state:
+    st.session_state.telefon = ""
+if "email" not in st.session_state:
+    st.session_state.email = ""
+if "wunsch" not in st.session_state:
+    st.session_state.wunsch = ""
+if "dauer" not in st.session_state:
+    st.session_state.dauer = 0
 if "letzte_buchung" not in st.session_state:
     st.session_state.letzte_buchung = None
 if "gebucht" not in st.session_state:
