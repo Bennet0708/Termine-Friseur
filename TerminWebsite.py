@@ -213,10 +213,15 @@ def sende_emails_sicher(termin, email_kunde):
     except Exception as exc:
         st.warning(f"Buchung gespeichert, aber E-Mail-Versand fehlgeschlagen: {exc}")
 
-
-def reset_auswahl():
+def reset_formular():
+    st.session_state.telefon = ""
+    st.session_state.email = ""
+    st.session_state.wunsch = ""
+    st.session_state.modus = None
+    st.session_state.dauer = 0
     st.session_state.gewaehlte_uhrzeit = None
     st.session_state.gewaehltes_datum = None
+
 
 
 DAUER_MIN = {
@@ -399,6 +404,7 @@ elif st.session_state.step == 3:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Zurück"):
+                reset_formular()
                 st.session_state.step = 2
                 st.rerun()
 
@@ -456,9 +462,9 @@ elif st.session_state.step == 3:
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Zurück"):
+                reset_formular()
                 st.session_state.step = 2
                 st.session_state.gebucht = False
-                reset_auswahl()
                 st.rerun()
 
         with col2:
@@ -558,6 +564,7 @@ elif st.session_state.step == 4:
 
     with col2:
         if st.button("Nein, zurück"):
+            reset_formular()
             st.session_state.step = 3
             st.rerun()
 elif st.session_state.step == 5:
@@ -585,7 +592,7 @@ elif st.session_state.step == 5:
         st.session_state.step = 1
         st.session_state.gebucht = False
         st.session_state.letzte_buchung = None
-        reset_auswahl()
+        reset_formular()
         st.rerun()
 
     st.stop()
