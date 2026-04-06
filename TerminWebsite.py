@@ -198,11 +198,11 @@ def freie_termine(datum, dauer, belegte_slots):
     return freie_startzeiten
 
 
-def buchungen_pro_tag(termine, telefon, datum):
+def buchungen_pro_tag(termine, email, datum):
     return sum(
         1
         for termin in termine
-        if termin.get("telefon") == telefon and termin.get("datum") == datum
+        if termin.get("email") == email and termin.get("datum") == datum
     )
 
 
@@ -256,9 +256,9 @@ KATEGORIEN = {
 
 st.set_page_config(page_title="Termin buchen", page_icon="💈", layout="wide")
 st.title("Online Termin buchen")
-st.caption("Schnell und unkompliziert Termin auswaehlen")
+st.caption("Schnell und unkompliziert Termin auswählen")
 st.markdown("---")
-st.info("Oeffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
+st.info("Öffnungszeiten: Mo-Fr 8:30-18:00 Uhr")
 
 termine, belegte_slots = laden()
 
@@ -343,8 +343,8 @@ elif st.session_state.step == 3:
     if service.startswith("Anderes -"):
         modus = "manual"
     elif "Beratung" in service or "Extrawunsch" in service:
-        art = st.radio("Wie soll das laufen?", ["Termin vor Ort", "Rueckruf / E-Mail"])
-        modus = "manual" if art == "Rueckruf / E-Mail" else "standard"
+        art = st.radio("Wie soll das laufen?", ["Termin vor Ort", "Rückruf / E-Mail"])
+        modus = "manual" if art == "Rückruf / E-Mail" else "standard"
     else:
         modus = "standard"
 
@@ -357,7 +357,7 @@ elif st.session_state.step == 3:
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Zurueck"):
+            if st.button("Zurück"):
                 st.session_state.step = 2
                 st.rerun()
 
@@ -393,8 +393,8 @@ elif st.session_state.step == 3:
         dauer = DAUER_MIN[service]
 
         telefon = st.text_input("Telefonnummer")
-        email = st.text_input("E-Mail (fuer Bestaetigung)")
-        datum = st.date_input("Datum auswaehlen", key="slot_datum_widget", min_value=date.today())
+        email = st.text_input("E-Mail (für Bestätigung)")
+        datum = st.date_input("Datum auswählen", key="slot_datum_widget", min_value=date.today())
         datum_str = datum.strftime("%d.%m.%Y")
 
         if datum_str != st.session_state.gewaehltes_datum:
@@ -405,7 +405,7 @@ elif st.session_state.step == 3:
 
         if freie:
             st.subheader("Freie Uhrzeiten")
-            st.write("Tippe auf eine Uhrzeit, um den Termin auszuwaehlen.")
+            st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
             cols = st.columns(4)
             for index, slot in enumerate(freie):
                 with cols[index % 4]:
@@ -418,12 +418,12 @@ elif st.session_state.step == 3:
 
         if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
             st.success(
-                f"Gewaehlter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+                f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
             )
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Zurueck"):
+            if st.button("Zurück"):
                 st.session_state.step = 2
                 st.session_state.gebucht = False
                 reset_auswahl()
@@ -447,7 +447,7 @@ elif st.session_state.step == 3:
                     st.stop()
 
                 if not datum_final or not uhrzeit_final:
-                    st.error("Bitte erst eine Uhrzeit auswaehlen.")
+                    st.error("Bitte erst eine Uhrzeit auswählen.")
                     st.session_state.gebucht = False
                     st.stop()
 
@@ -455,13 +455,13 @@ elif st.session_state.step == 3:
                 slots_liste = slots_fuer_termin(datum_final, uhrzeit_final, dauer)
 
                 if any(slot in belegte_slots_aktuell for slot in slots_liste):
-                    st.error("Dieser Termin wurde gerade schon vergeben. Bitte waehle eine andere Uhrzeit.")
+                    st.error("Dieser Termin wurde gerade schon vergeben. Bitte wähle eine andere Uhrzeit.")
                     st.session_state.gebucht = False
                     st.stop()
 
-                count = buchungen_pro_tag(termine_aktuell, telefon.strip(), datum_final)
+                count = buchungen_pro_tag(termine_aktuell, email.strip(), datum_final)
                 if count >= 4:
-                    st.error("Diese Telefonnummer hat bereits mehrere Termine an diesem Tag gebucht.")
+                    st.error("Diese E-Mail-Adresse hat bereits mehrere Termine an diesem Tag gebucht.")
                     st.session_state.gebucht = False
                     st.stop()
 
@@ -506,7 +506,7 @@ elif st.session_state.step == 4:
         st.write("**Wunsch:**", buchung.get("Wunsch", "-"))
         st.write("**E-Mail:**", buchung.get("Email", "-"))
 
-    st.info("Wenn der Mailversand funktioniert hat, wurde eine Bestaetigung verschickt.")
+    st.info("Wenn der Mailversand funktioniert hat, wurde eine Bestätigung verschickt.")
 
     if st.button("Noch einen Termin buchen"):
         st.session_state.step = 1
@@ -559,7 +559,7 @@ elif st.session_state.step == 5:
         optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')}" for i, t in enumerate(termine)]
         auswahl = st.selectbox("Eintrag auswaehlen zum Loeschen", optionen)
 
-        if st.button("Loeschen"):
+        if st.button("Löschen"):
             index = optionen.index(auswahl)
             termin = termine[index]
 
@@ -568,7 +568,7 @@ elif st.session_state.step == 5:
             else:
                 supabase.table("anfragen").delete().eq("id", termin["id"]).execute()
 
-            st.success("Eintrag geloescht")
+            st.success("Eintrag gelöscht")
             st.rerun()
 
 elif st.session_state.step == 99:
@@ -583,13 +583,13 @@ elif st.session_state.step == 99:
         else:
             st.session_state.admin_versuche += 1
             rest = 3 - st.session_state.admin_versuche
-            st.error(f"Falsches Passwort. {rest} Versuche uebrig.")
+            st.error(f"Falsches Passwort. {rest} Versuche übrig.")
 
             if st.session_state.admin_versuche >= 3:
                 st.warning("Zu viele Fehlversuche.")
                 st.session_state.step = 1
                 st.rerun()
 
-    if st.button("Zurueck"):
+    if st.button("Zurück"):
         st.session_state.step = 1
         st.rerun()
