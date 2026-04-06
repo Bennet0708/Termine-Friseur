@@ -448,8 +448,6 @@ elif st.session_state.step == 3:
                     if st.button(slot, key=f"slot_{datum_str}_{slot}", use_container_width=True):
                         st.session_state.gewaehlte_uhrzeit = slot
                         st.session_state.gewaehltes_datum = datum_str
-                        st.session_state.step = 4
-                        st.rerun()
         else:
             st.warning("An diesem Tag sind keine Termine mehr frei.")
 
