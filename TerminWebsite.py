@@ -594,7 +594,7 @@ elif st.session_state.step == 5:
 
     st.stop()
 
-elif st.session_state.step == 5:
+elif st.session_state.step == 6:
     if not st.session_state.is_admin:
         st.session_state.step = 99
         st.rerun()
@@ -691,7 +691,7 @@ elif st.session_state.step == 99:
     if st.button("Anmelden"):
         if passwort == st.secrets["ADMIN_PASSWORT"]:
             st.session_state.is_admin = True
-            st.session_state.step = 5
+            st.session_state.step = 6
             st.rerun()
         else:
             st.session_state.admin_versuche += 1
