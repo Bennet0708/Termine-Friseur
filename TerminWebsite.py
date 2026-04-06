@@ -551,11 +551,14 @@ elif st.session_state.step == 5:
         for termin in standard:
             del termin["Sortierung"]
 
+        gewuenschte_spalten_standard = ['name', 'telefon', 'datum', 'uhrzeit', 'service', 'termindauer', 'email']
+        gewuenschte_spalten_manual = ['name', 'telefon', 'service', 'wunsch', 'email']
+
         st.subheader("Terminbuchungen")
-        st.dataframe(pd.DataFrame(standard), use_container_width=True)
+        st.dataframe(pd.DataFrame([{k: v for k, v in t.items() if k in gewuenschte_spalten_standard} for t in standard]), use_container_width=True)
 
         st.subheader("Manuelle Anfragen")
-        st.dataframe(pd.DataFrame(manual), use_container_width=True)
+        st.dataframe(pd.DataFrame([{k: v for k, v in t.items() if k in gewuenschte_spalten_manual} for t in manual]), use_container_width=True)
 
         optionen = [f"{i + 1} - {t.get('name', '-')} - {t.get('service', '-')} - {t.get('email', '-')}" for i, t in enumerate(termine)]
         auswahl = st.selectbox("Eintrag auswählen zum löschen", optionen)
