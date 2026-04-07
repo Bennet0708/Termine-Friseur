@@ -1,4 +1,4 @@
-supabase==2.4.0
+supabase==2.3.0
 streamlit==1.33.0
 pandas==2.2.2
 httpx==0.24.1
