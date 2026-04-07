@@ -4,21 +4,10 @@ from datetime import date, datetime, timedelta, timezone
 from email.mime.text import MIMEText
 import json
 from pathlib import Path
-
+    
 import pandas as pd
 import streamlit as st
 from supabase import create_client
-
-try:
-    from google.oauth2 import service_account
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
-    from google_auth_oauthlib.flow import InstalledAppFlow
-    from googleapiclient.discovery import build
-    GOOGLE_CALENDAR_AVAILABLE = True
-except ImportError:
-    GOOGLE_CALENDAR_AVAILABLE = False
-    st.warning("Google Calendar API nicht installiert. Nutze: pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client")
 
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
@@ -250,7 +239,11 @@ def sende_emails_sicher(termin, email_kunde):
 
 
 def termin_zu_google_calendar(termin):
-    if not GOOGLE_CALENDAR_AVAILABLE or termin.get("modus") != "standard":
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+    except ImportError:
+        st.warning("Google Calendar API nicht installiert. Nutze: pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client")
         return
     
     try:
