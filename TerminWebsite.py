@@ -1,11 +1,24 @@
 ﻿import re
 import smtplib
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from email.mime.text import MIMEText
+import json
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from supabase import create_client
+
+try:
+    from google.oauth2 import service_account
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    from googleapiclient.discovery import build
+    GOOGLE_CALENDAR_AVAILABLE = True
+except ImportError:
+    GOOGLE_CALENDAR_AVAILABLE = False
+    st.warning("Google Calendar API nicht installiert. Nutze: pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client")
 
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
@@ -163,10 +176,10 @@ def email_ok(email):
     return re.match(muster, email) is not None
 
 BLOCKIERTE_TAGE = [
-   "24.12.2026"
-   "25.12.2026"
-   "26.12.2026"
-   "31.12.2026"
+   "24.12.2026",
+   "25.12.2026",
+   "26.12.2026",
+   "31.12.2026",
    "01.01.2027"
 ]
 
@@ -185,7 +198,7 @@ def freie_termine(datum, dauer, belegte_slots):
     if ist_tag_blockiert(datum):
         return []
     
-    jetzt = datetime.now()
+    jetzt = datetime.now(timezone(timedelta(hours=2)))
     heute_str = jetzt.strftime("%d.%m.%Y")
 
     freie_startzeiten = []
@@ -194,7 +207,7 @@ def freie_termine(datum, dauer, belegte_slots):
 
     while True:
         startzeit = f"{stunden:02d}:{minuten:02d}"
-        slot_dt = datetime.strptime(f"{datum} {startzeit}", "%d.%m.%Y %H:%M")
+        slot_dt = datetime.strptime(f"{datum} {startzeit}", "%d.%m.%Y %H:%M").replace(tzinfo=timezone(timedelta(hours=2)))
 
         if datum == heute_str and slot_dt < jetzt + timedelta(minutes=15):
             minuten += 15
@@ -234,6 +247,45 @@ def sende_emails_sicher(termin, email_kunde):
         bestaetigung_senden(termin, email_kunde)
     except Exception as exc:
         st.warning(f"Buchung gespeichert, aber E-Mail-Versand fehlgeschlagen: {exc}")
+
+
+def termin_zu_google_calendar(termin):
+    if not GOOGLE_CALENDAR_AVAILABLE or termin.get("modus") != "standard":
+        return
+    
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=["https://www.googleapis.com/auth/calendar"]
+        )
+        
+        service = build("calendar", "v3", credentials=credentials)
+        
+        datum = termin.get("datum")
+        uhrzeit = termin.get("uhrzeit")
+        dauer = int(termin.get("termindauer", 30))
+        
+        datum_obj = datetime.strptime(f"{datum} {uhrzeit}", "%d.%m.%Y %H:%M")
+        ende_obj = datum_obj + timedelta(minutes=dauer)
+        
+        event = {
+            "summary": f"Termin: {termin.get('name')} - {termin.get('service')}",
+            "description": f"Telefon: {termin.get('telefon')}\nE-Mail: {termin.get('email')}",
+            "start": {
+                "dateTime": datum_obj.isoformat(),
+                "timeZone": "Europe/Berlin",
+            },
+            "end": {
+                "dateTime": ende_obj.isoformat(),
+                "timeZone": "Europe/Berlin",
+            },
+        }
+        kalender_id = st.secrets["GOOGLE_CALENDAR_ID"]
+        result = service.events().insert(calendarId=kalender_id, body=event).execute()
+        st.success(f"✅ Termin in Google Calendar eingetragen!")
+        
+    except Exception as exc:
+        st.warning(f"Google Calendar Fehler: {exc}")
 
 def reset_formular():
     st.session_state.telefon = ""
@@ -582,6 +634,7 @@ elif st.session_state.step == 4:
                 st.stop()
 
             sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
+            termin_zu_google_calendar(st.session_state.letzte_buchung)
             st.session_state.step = 5
             st.rerun()
 
