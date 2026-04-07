@@ -8,10 +8,15 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from supabase import create_client
+from supabase.lib.client_options import ClientOptions
 
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
     st.secrets["SUPABASE_KEY"],
+    options=ClientOptions(
+        postgrest_client_timeout=10,
+        storage_client_timeout=10,
+    )
 )
 
 
