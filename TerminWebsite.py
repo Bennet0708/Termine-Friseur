@@ -630,7 +630,6 @@ elif st.session_state.step == 4:
             sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
             termin_zu_google_calendar(st.session_state.letzte_buchung)
             st.session_state.step = 5
-            st.rerun()
 
     with col2:
         if st.button("Nein, zurück"):
