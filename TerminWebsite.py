@@ -239,6 +239,7 @@ def sende_emails_sicher(termin, email_kunde):
 
 
 def termin_zu_google_calendar(termin):
+    st.write("CALENDAR FUNCTION WIRD AUFGERUFEN")
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
