@@ -509,15 +509,17 @@ elif st.session_state.step == 3:
 
         freie = freie_termine(datum_str, dauer, belegte_slots)
 
+        from datetime import datetime
+
         if freie:
             st.subheader("Freie Uhrzeiten")
-            st.write("Tippe auf eine Uhrzeit, um den Termin auszuwählen.")
-            cols = st.columns(4)
-            for index, slot in enumerate(freie):
-                with cols[index % 4]:
-                    if st.button(slot, key=f"slot_{datum_str}_{slot}", use_container_width=True):
-                        st.session_state.gewaehlte_uhrzeit = slot
-                        st.session_state.gewaehltes_datum = datum_str
+
+            freie = sorted(freie, key=lambda x: datetime.strptime(x, "%H:%M"))
+
+            for slot in freie:
+                if st.button(f"🕒 {slot}", use_container_width=True):
+                    st.session_state.gewaehlte_uhrzeit = slot
+                    st.session_state.gewaehltes_datum = datum_str
         else:
             st.warning("An diesem Tag sind keine Termine frei.")
 
