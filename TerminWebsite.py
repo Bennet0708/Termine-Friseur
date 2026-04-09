@@ -516,13 +516,12 @@ elif st.session_state.step == 3:
 
             freie = sorted(freie, key=lambda x: datetime.strptime(x, "%H:%M"))
 
-            if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
-                st.success(
-                    f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-                )
-
             for slot in freie:
                 if st.button(f"🕒 {slot}", use_container_width=True):
+                    if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
+                        st.success(
+                            f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+                        )
                     st.session_state.gewaehlte_uhrzeit = slot
                     st.session_state.gewaehltes_datum = datum_str
         else:
