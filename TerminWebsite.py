@@ -448,7 +448,7 @@ elif st.session_state.step == 2:
 
 elif st.session_state.step == 3:
     service = st.session_state.service
-    st.write(f"**Schritt {st.session_state.step} von 3**")
+    st.write(f"**Schritt {st.session_state.step} von 5**")
     st.write(f"**Service:** {service}")
 
     if service.startswith("Anderes -"):
@@ -516,17 +516,17 @@ elif st.session_state.step == 3:
 
             freie = sorted(freie, key=lambda x: datetime.strptime(x, "%H:%M"))
 
+            if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
+                st.success(
+                    f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
+                )
+
             for slot in freie:
                 if st.button(f"🕒 {slot}", use_container_width=True):
                     st.session_state.gewaehlte_uhrzeit = slot
                     st.session_state.gewaehltes_datum = datum_str
         else:
             st.warning("An diesem Tag sind keine Termine frei.")
-
-        if st.session_state.gewaehlte_uhrzeit and st.session_state.gewaehltes_datum == datum_str:
-            st.success(
-                f"Gewählter Termin: {st.session_state.gewaehltes_datum} um {st.session_state.gewaehlte_uhrzeit}"
-            )
 
         col1, col2 = st.columns(2)
         with col1:
@@ -587,17 +587,17 @@ elif st.session_state.step == 4:
 
     if buchung.get("modus") == "standard":
         st.write("**Name:**", buchung.get("name", "-"))
-        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
         st.write("**Datum:**", buchung.get("datum", "-"))
         st.write("**Uhrzeit:**", buchung.get("uhrzeit", "-"))
-        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
-        st.write("**E-Mail:**", buchung.get("email", "-"))
-    else:
-        st.write("**Name:**", buchung.get("name", "-"))
         st.write("**Telefon:**", buchung.get("telefon", "-"))
+        st.write("**E-Mail:**", buchung.get("email", "-"))
+    elif buchung.get("modus") == "manual":
+        st.write("**Name:**", buchung.get("name", "-"))
         st.write("**Service:**", buchung.get("service", "-"))
         st.write("**Wunsch:**", buchung.get("wunsch", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**E-Mail:**", buchung.get("email", "-"))
 
     st.write("**Alles korrekt?**")
