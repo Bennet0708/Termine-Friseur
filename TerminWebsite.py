@@ -239,7 +239,6 @@ def sende_emails_sicher(termin, email_kunde):
 
 
 def termin_zu_google_calendar(termin):
-    st.write("CALENDAR FUNCTION WIRD AUFGERUFEN")
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
@@ -276,7 +275,6 @@ def termin_zu_google_calendar(termin):
         }
         kalender_id = st.secrets["GOOGLE_CALENDAR_ID"]
         result = service.events().insert(calendarId=kalender_id, body=event).execute()
-        st.success(f"✅ Termin in Google Calendar eingetragen!")
         
     except Exception as exc:
         st.warning(f"Google Calendar Fehler: {exc}")
@@ -384,7 +382,7 @@ if "slot_datum_widget" not in st.session_state:
     st.session_state.slot_datum_widget = date.today()
 
 if st.session_state.step == 1:
-    st.write(f"**Schritt {st.session_state.step} von 3**")
+    st.write(f"**Schritt {st.session_state.step} von 5**")
     name = st.text_input("Name", value=st.session_state.name, placeholder="Vorname Nachname")
 
     col1, col2 = st.columns(2)
@@ -404,7 +402,7 @@ if st.session_state.step == 1:
             st.rerun()
 
 elif st.session_state.step == 2:
-    st.write(f"**Schritt {st.session_state.step} von 3**")
+    st.write(f"**Schritt {st.session_state.step} von 5**")
     st.write(f"Hallo **{st.session_state.name}**")
 
     kategorien_liste = list(KATEGORIEN.keys())
@@ -629,6 +627,7 @@ elif st.session_state.step == 4:
             sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
             termin_zu_google_calendar(st.session_state.letzte_buchung)
             st.session_state.step = 5
+            st.rerun()
 
     with col2:
         if st.button("Nein, zurück"):
@@ -641,17 +640,17 @@ elif st.session_state.step == 5:
 
     if buchung.get("modus") == "standard":
         st.write("**Name:**", buchung.get("name", "-"))
-        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**Service:**", buchung.get("service", "-"))
+        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
         st.write("**Datum:**", buchung.get("datum", "-"))
         st.write("**Uhrzeit:**", buchung.get("uhrzeit", "-"))
-        st.write("**Dauer:**", f"{buchung.get('termindauer', '-')} Minuten")
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**E-Mail:**", buchung.get("email", "-"))
     elif buchung.get("modus") == "manual":
         st.write("**Name:**", buchung.get("name", "-"))
-        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**Service:**", buchung.get("service", "-"))
         st.write("**Wunsch:**", buchung.get("wunsch", "-"))
+        st.write("**Telefon:**", buchung.get("telefon", "-"))
         st.write("**E-Mail:**", buchung.get("email", "-"))
 
     st.info("Wenn der Mailversand funktioniert hat, wurde eine Bestätigung verschickt.")
