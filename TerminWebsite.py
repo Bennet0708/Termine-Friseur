@@ -341,7 +341,6 @@ KATEGORIEN = {
 }
 
 st.set_page_config(page_title="Termin buchen", page_icon="💈", layout="wide")
-st.write(st.secrets)
 st.title("Online Termin buchen")
 st.caption("Schnell und unkompliziert Termin auswählen")
 st.markdown("---")
