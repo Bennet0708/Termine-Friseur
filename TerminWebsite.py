@@ -341,7 +341,6 @@ KATEGORIEN = {
 }
 
 st.set_page_config(page_title="Termin buchen", page_icon="💈", layout="wide")
-st.write("TEST123")
 st.title("Online Termin buchen")
 st.caption("Schnell und unkompliziert Termin auswählen")
 st.markdown("---")
@@ -606,7 +605,6 @@ elif st.session_state.step == 4:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Ja, buchen"):
-            # Hier die Validierungen und Speicherung
             if buchung.get("modus") == "standard":
                 termine_aktuell, belegte_slots_aktuell = laden()
                 slots_liste = slots_fuer_termin(datum_final, uhrzeit_final, st.session_state.dauer)
@@ -628,8 +626,8 @@ elif st.session_state.step == 4:
                 st.error(f"Fehler beim Speichern: {exc}")
                 st.stop()
 
-            #sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
-            #termin_zu_google_calendar(st.session_state.letzte_buchung)
+            sende_emails_sicher(st.session_state.letzte_buchung, buchung.get("email"))
+            termin_zu_google_calendar(st.session_state.letzte_buchung)
             st.session_state.step = 5
 
     with col2:
