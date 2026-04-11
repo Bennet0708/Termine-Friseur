@@ -1,0 +1,42 @@
+name: Reminder Cronjob
+
+on:
+  schedule:
+    # Läuft alle 15 Minuten
+    - cron: '*/15 * * * *'
+  # Manuelle Auslösung möglich
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install supabase resend
+
+      - name: Run Reminder Cronjob
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          python reminder_cron.py
+
+      - name: Upload Reminder Status
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: reminder-status
+          path: .reminder_status.json
+          retention-days: 7
