@@ -34,7 +34,7 @@ jobs:
           python reminder_cron.py
 
       - name: Upload Reminder Status
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: reminder-status
